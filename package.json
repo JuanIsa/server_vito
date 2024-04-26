@@ -1,0 +1,21 @@
+{
+  "name": "server_vito_di_fresca_e_hijos",
+  "version": "1.0.0",
+  "description": "Servidor dedicado a la administración de la venta de cajas de seguridad",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node ./src/index.js",
+    "dev": "nodemon ./src/index.js"
+  },
+  "author": "Juan Isa",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "mongoose": "6.9"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
