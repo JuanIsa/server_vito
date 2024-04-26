@@ -1,7 +1,7 @@
 
 # Proyecto creado con Node JS
 ## `Server de implementación para empresa Vito Di Fresca e hijos` 
-### Implementación de E-commers
+### Implementación de sistema comercial
 
 ## Scritps disponibles.
 En la carpeta del proyecto hay varios comandos que podés correr. 
