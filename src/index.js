@@ -7,9 +7,9 @@ import { dirname } from 'path';
 
 //Servicios
 import mongoConnect from './services/mongoConnection.js';
+import usersRoute from './routes/users.js';
 
-
-//mongoConnect();
+mongoConnect();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const app = express();
@@ -24,11 +24,11 @@ app.use(express.urlencoded({ extended: true }));
 //Defino que los archivos estáticos los va a tomar del siguiente directorio:
 app.use(express.static('public'));
 
-app.post("/users", async (req, res) => {
-    console.log("Se ejecutó una consulta POST");
-    console.log(req.body);
-    res.send({dataServer:"Te mando el ok desde el servidor"});
-});
+
+
+//ROUTES
+app.use('/users', usersRoute);
+
 app.get("/", async (req, res) => {
     res.send("Todo Ok funcionando");
 });
