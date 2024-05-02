@@ -24,8 +24,6 @@ app.use(express.urlencoded({ extended: true }));
 //Defino que los archivos estáticos los va a tomar del siguiente directorio:
 app.use(express.static('public'));
 
-
-
 //ROUTES
 app.use('/users', usersRoute);
 

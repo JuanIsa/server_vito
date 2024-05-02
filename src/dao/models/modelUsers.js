@@ -1,23 +1,44 @@
-import { response } from "express";
 import mongoose from "mongoose";
 
 const collection = 'userTypes';
 
-
 const userSchema = new mongoose.Schema({
+    active: Boolean,
     idUser: {
         type: Number,
-        require: true,
-        unique:false,
+        required: true,
+        unique: true
     },
-    role: {
-        type:String,
-        require: true
-    },
-    creationDate:{
+    userName: {
         type: String,
+        required: true,
+        unique: true 
+    },
+    password: String,
+    role: {
+        type: String,
+        required: true
+    },
+    creationData:{
+        type: {
+            date: String,
+            responsible: String,
+        }
+    },
+    modificationData:{
+        type: {
+            date: String,
+            responsible: String,
+        }
+    },
+    deleteData:{
+        type: {
+            date: String,
+            responsible: String,
+        }
     }
     }, 
+    //Control de versiones de documento, agrega un campo extra al documento.
     { versionKey: false }
 );
 
