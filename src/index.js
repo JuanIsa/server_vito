@@ -3,7 +3,7 @@
 import express from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { dirname, join } from 'path';
 
 //Servicios
 import mongoConnect from './services/mongoConnection.js';
@@ -30,6 +30,25 @@ app.use('/users', usersRoute);
 app.get("/", async (req, res) => {
     res.send("Todo Ok funcionando");
 });
+
+// Middleware para manejar errores 404
+app.use((req, res, next) => {
+    const err = new Error('Not Found');
+    err.status = 404;
+    next(err);
+  });
+  
+  // Middleware para manejar errores
+  app.use((err, req, res, next) => {
+    // Si el error es 404, mostrar el GIF animado
+    if (err.status === 404) {
+      res.status(404).sendFile(join(__dirname, 'public', 'error.gif'));
+    } else {
+      // Para otros errores, responder con un mensaje genérico
+      res.status(err.status || 500).send('Error');
+    }
+  });
+  
 
 //ESCUCHA DEL SERVER
 app.listen(PORT, () => {

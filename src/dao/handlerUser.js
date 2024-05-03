@@ -1,4 +1,5 @@
 import userModel from './models/modelUsers.js';
+import userModelList from './models/modelListTypeUsers.js';
 import { createHash } from '../services/bcrypt.js';
 import jwt from 'jsonwebtoken';
 
@@ -14,18 +15,22 @@ function getDate(){
     JSON.stringify(now);
     return fechaHoraTexto;
 }
+
 class Users {
     async createUser(dataUser) {
         //Descompongo los datos de entrada.
-        const {userName, password, role} = dataUser;
+        let {userName, password, role} = dataUser;
+        //Llevo todos los datos de entrada a minúscula.
+        userName = userName.toLowerCase();
+        //Reviso si ya existe el usuario en la base de datos.
         const usuarioExistente = await userModel.findOne({ userName });
         if (usuarioExistente) {
-            console.log("Entro al error");
             throw new Error('Ya existe un usuario con este nombre.');
         }
+        //Hasheo (encripto) el password del usuario.
         const hashedPass = await createHash(password);
         //Verifico cuál es el último ID de ID de usuario y le sumo para que sea autoincremental
-        let lastIdUser= await this.findTheLastOne()+1;
+        let lastIdUser= await this.findTheLastUser()+1;
         //Creo un usuario en la colecicción
         const createUser = await userModel.create({
             active: true,
@@ -42,8 +47,7 @@ class Users {
         .catch(e => e)
         return createUser;
     }
-    //Función para buscar el último ID de los registros de los usuarios
-    async findTheLastOne() {
+    async findTheLastUser() {
         try {
             //busco el último registro
             const lastElement = await userModel.findOne().sort({ _id: -1 });
@@ -69,10 +73,36 @@ class Users {
         res.cookie("JTS",token).send({ status: 0, message: 'Sesión iniciada con éxito.' });
     }
     async showUsers(){
-        const allUsers = await userModel.find()
+        //Devuelve la lista completa de usuarios ordenados alfabéticamente de manera decendente.
+        const allUsers = await userModel.find().sort({userName:1})
             .then(data => data)
             .catch(e => e)
         return allUsers
     }
+    async showOneUser(user){
+        //Devuelve la lista completa de usuarios ordenados alfabéticamente de manera decendente.
+        const allUsers = await userModel.find(user)
+        .then(data => data)
+        .catch(e => e)
+        return allUsers
+    }
+    async showListTypeUsers(){
+        const allUsers = await userModelList.find()
+            .then(data => data)
+            .catch(e => e)
+        return allUsers
+    }
+    async userState(dataUser){
+        const {idUser, active} = dataUser;
+        
+        console.log(idUser, active);
+        // Actualizar el campo 'email' del usuario con el ID dado, el parámetro { new: true }
+        //me dice que una vez hecha la modificación devuelva el documento con los cambios hechos.
+        const allUsers = await userModel.findByIdAndUpdate(idUser, { active}, { new: true })
+            .then(data => data)
+            .catch(e => e)
+        return allUsers
+    }
+
 }
 export default Users;
