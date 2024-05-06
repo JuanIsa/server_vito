@@ -61,7 +61,7 @@ usersRoute.get('/showlisttypeusers', (req, res)=>{
                 respuesta.error= true;
                 respuesta.message= data.message;
             }else{
-            respuesta.data = data;
+                respuesta.data = data;
             }
             res.send(respuesta);
         })
@@ -96,10 +96,78 @@ usersRoute.post('/showoneuser', (req, res)=>{
 usersRoute.patch('/userstate', (req, res)=>{
     let respuesta = {
         error: false,
-        message: "",
+        message: "Realizado correctamente",
         data: []
     }
     instanceOfUsers.userState(req.body)
+        .then(data=>{
+            if(data.errors) {
+                respuesta.error= true;
+                respuesta.message= data.message;
+            }else{
+            respuesta.data = data;
+            }
+            res.send(respuesta);
+        })
+        .catch(e=>{
+            respuesta.error= true;
+            respuesta.message= e.message;
+            res.send(respuesta);
+        });
+});
+
+usersRoute.post('/registerTypeUser',(req, res)=>{
+    let respuesta = {
+        error: false,
+        message: "Se creó el tipo de usuario correctamente"
+    }
+    instanceOfUsers.createTypeUser(req.body)
+    .then(data => {
+        if(data.errors) {
+            respuesta.error= true;
+            respuesta.message= data.message;
+        }
+        res.send(respuesta);
+    })
+    .catch(e => {
+        respuesta.error= true;
+        respuesta.message= e.message;
+        res.send(respuesta);
+    });
+});
+
+
+usersRoute.post('/showonetypeuser', (req, res)=>{
+    let respuesta = {
+        error: false,
+        message: "",
+        data: []
+    }
+    instanceOfUsers.showOneTypeUser(req.body)
+        .then(data=>{
+            if (Array.isArray(data) && data.length === 0) {
+                respuesta.error= true;
+                respuesta.message= "No existe un tipo de usuario con ese ID";
+            }else{
+            respuesta.data = data;
+            }
+            res.send(respuesta);
+        })
+        .catch(e=>{
+            respuesta.error= true;
+            respuesta.message= e.message;
+            res.send(respuesta);
+        });
+});
+
+
+usersRoute.patch('/usertypestate', (req, res)=>{
+    let respuesta = {
+        error: false,
+        message: "Realizado correctamente",
+        data: []
+    }
+    instanceOfUsers.userTypeState(req.body)
         .then(data=>{
             if(data.errors) {
                 respuesta.error= true;
