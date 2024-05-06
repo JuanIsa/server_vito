@@ -147,7 +147,7 @@ usersRoute.post('/showonetypeuser', (req, res)=>{
         .then(data=>{
             if (Array.isArray(data) && data.length === 0) {
                 respuesta.error= true;
-                respuesta.message= "No existe un tipo de usuario con ese ID";
+                respuesta.message= "No existe un tipo de usuario con el id indicado";
             }else{
             respuesta.data = data;
             }
@@ -159,7 +159,6 @@ usersRoute.post('/showonetypeuser', (req, res)=>{
             res.send(respuesta);
         });
 });
-
 
 usersRoute.patch('/usertypestate', (req, res)=>{
     let respuesta = {
