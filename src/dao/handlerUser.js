@@ -15,19 +15,19 @@ function getDate(){
     JSON.stringify(now);
     return fechaHoraTexto;
 }
-
 class Users {
     async createUser(dataUser) {
+        console.log(dataUser);
         //Descompongo los datos de entrada.
         let {idUser, userName, password, role} = dataUser;
         //Llevo todos los datos de entrada a minúscula.
         userName = userName.toLowerCase();
         //Hasheo (encripto) el password del usuario.
         const hashedPass = await createHash(password);
-
         if(idUser == 0) {
             //Reviso si ya existe el usuario en la base de datos.
             const usuarioExistente = await userModel.findOne({ userName });
+            console.log(usuarioExistente);
             if (usuarioExistente) {
                 throw new Error('Ya existe un usuario con este nombre.');
             }
@@ -149,7 +149,6 @@ class Users {
             })
         return allUsers
     }
-
     async createTypeUser(dataTypeUser) {
         //Descompongo los datos de entrada.
         let {idType, role} = dataTypeUser;
@@ -193,8 +192,6 @@ class Users {
         
         return updateTypeUser;
     }
-
-    
     async userTypeState(dataTypeUser){
         const {idType, active} = dataTypeUser;
         // Actualizar el campo 'email' del usuario con el ID dado, el parámetro { new: true }
@@ -210,6 +207,5 @@ class Users {
             })
         return allTypeUsers
     }
-
 }
 export default Users;
