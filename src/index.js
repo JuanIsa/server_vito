@@ -8,6 +8,7 @@ import { dirname, join } from 'path';
 //Servicios
 import mongoConnect from './services/mongoConnection.js';
 import usersRoute from './routes/users.js';
+import clientsRoute from './routes/client.js';
 
 mongoConnect();
 const __filename = fileURLToPath(import.meta.url);
@@ -25,6 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 //Rutas
 app.use('/users', usersRoute);
+app.use('/client', clientsRoute);
 //Ruta default de inicio del servidor.
 app.get("/", async (req, res) => {
   res.send("Todo Ok funcionando");

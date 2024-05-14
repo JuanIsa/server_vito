@@ -17,7 +17,6 @@ function getDate(){
 }
 class Users {
     async createUser(dataUser) {
-        console.log(dataUser);
         //Descompongo los datos de entrada.
         let {idUser, userName, password, role} = dataUser;
         //Llevo todos los datos de entrada a minúscula.
