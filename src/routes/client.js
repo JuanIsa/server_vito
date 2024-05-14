@@ -1,9 +1,8 @@
 import { Router } from 'express'; 
-import Clients from '../dao/handleClient.js';
+import ClientController from '../controllers/client.controller.js';
 
 const clientsRoute = Router();
-const instanceOfClients = new Clients();
 
-clientsRoute.post('/create', instanceOfClients.createClient);
+clientsRoute.post('/create', ClientController.clientCreateClient);
 
 export default clientsRoute;
