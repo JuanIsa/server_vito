@@ -43,7 +43,8 @@ const clientSchema = new mongoose.Schema({
     transportData: {
         type: {
             name: String,
-            observations: String
+            observations: String,
+            transportDate: String
         }
     },
     contactData: [contactSchema],

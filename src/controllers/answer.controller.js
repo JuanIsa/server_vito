@@ -7,7 +7,6 @@ export const handleResponse = async (promise, res) => {
     
     try {
         const data = await promise;
-        console.log(data);
         if (data.errors) {
             respuesta.error = true;
             respuesta.message = data.message;

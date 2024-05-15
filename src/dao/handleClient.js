@@ -1,4 +1,5 @@
 import clientModel from './models/modelClient.js';
+import FuncionesComunes from './handleCommonFunctions.js';
 
 class Clients {
     async createClient(data) {
@@ -20,25 +21,20 @@ class Clients {
             stateName : data.provincia,
             cpNumber : data.codigoPosta,
             cuitNumber : data.cuit,
-            ivaType : data.iva,
+            ivaType : 1,
             transportData : {
                 name : data.transporte,
                 observations : data.observacionesTransporte,
-                transportDate : getDate()
+                transportDate : FuncionesComunes.getDate()
             },
             contactData : data.contactos,
-            creationData: {date:getDate(),responsible:"root"},
+            creationData: {date:FuncionesComunes.getDate(),responsible:"root"},
             modificationData: {date:"",responsible:""},
             deleteData: {date:"",responsible:""}
         })
         //Deuelvo los datos de la creación o del error al front
-        .then(data => {
-            console.log("DATA ", data);
-        })
-        .catch(e => {
-            
-            console.log("error ", e);
-        })
+        .then(data => data)
+        .catch(e => e)
 
         return crearCliente;
     }
