@@ -4,7 +4,7 @@ const collection = 'listtypeusers';
 
 const userSchema = new mongoose.Schema({
     active: Boolean,
-    idType: {
+    id: {
         type: Number,
         required: true,
         unique: true

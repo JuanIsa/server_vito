@@ -1,42 +1,89 @@
 import clientModel from './models/modelClient.js';
 import FuncionesComunes from './handleCommonFunctions.js';
+import DataBase from './handleDataBase.js';
+import Administracion from './handleAdministration.js';
+
+const dataBase = new DataBase();
 
 class Clients {
     async createClient(data) {
-        const clienteExistente = await clientModel.findOne({ nombreCliente : data.nombreCliente });
+        const clienteExistente = await clientModel.findOne({ clientName : data.nombreCliente });
 
-        if(clienteExistente) {
+        if(clienteExistente && (data.idCliente == 0 || data.idCliente != clienteExistente.id)) {
             throw new Error('Ya existe un cliente con este nombre.');
         }
 
-        let ultimoIdCliente = 1;
+        if(data.idCliente == 0) {
+            let ultimoIdCliente = await dataBase.findLastId(clientModel) + 1;
 
-        const crearCliente = await clientModel.create({
-            active: true,
-            idClient: ultimoIdCliente, 
-            clientName : data.nombreCliente,
-            fantasyName : data.nombreFantasia,
-            streetName : data.direccion,
-            streetNumber : data.numeroDireccion,
-            stateName : data.provincia,
-            cpNumber : data.codigoPosta,
-            cuitNumber : data.cuit,
-            ivaType : 1,
-            transportData : {
-                name : data.transporte,
-                observations : data.observacionesTransporte,
-                transportDate : FuncionesComunes.getDate()
-            },
-            contactData : data.contactos,
-            creationData: {date:FuncionesComunes.getDate(),responsible:"root"},
-            modificationData: {date:"",responsible:""},
-            deleteData: {date:"",responsible:""}
-        })
-        //Deuelvo los datos de la creación o del error al front
+            return await clientModel.create({
+                active: true,
+                id: ultimoIdCliente, 
+                clientName : data.nombreCliente,
+                fantasyName : data.nombreFantasia,
+                streetName : data.direccion,
+                streetNumber : data.numeroDireccion,
+                stateName : data.provincia,
+                cpNumber : data.codigoPostal,
+                cuitNumber : data.cuit,
+                ivaType : data.iva,
+                transportData : {
+                    name : data.transporte,
+                    observations : data.observacionesTransporte,
+                    transportDate : FuncionesComunes.getDate()
+                },
+                contactData : data.contactos,
+                creationData: {date:FuncionesComunes.getDate(),responsible:"root"},
+                modificationData: {date:"",responsible:""},
+                deleteData: {date:"",responsible:""}
+            })
+            //Deuelvo los datos de la creación o del error al front
+            .then(data => data)
+            .catch(e => e)
+        } else {
+            return await clientModel.findOneAndUpdate(
+                {id: data.idCliente},
+                {
+                    active: true,
+                    clientName : data.nombreCliente,
+                    fantasyName : data.nombreFantasia,
+                    streetName : data.direccion,
+                    streetNumber : data.numeroDireccion,
+                    stateName : data.provincia,
+                    cpNumber : data.codigoPostal,
+                    cuitNumber : data.cuit,
+                    ivaType : data.iva,
+                    transportData : {
+                        name : data.transporte,
+                        observations : data.observacionesTransporte,
+                        transportDate : FuncionesComunes.getDate()
+                    },
+                    contactData : data.contactos,
+                    modificationData: {date:FuncionesComunes.getDate(),responsible:"root"},
+                },
+                {new: true}
+            )
+            .then(data => data)
+            .catch(e => e)
+        }
+    }
+
+    async clientList() {
+        return await clientModel.find()
         .then(data => data)
         .catch(e => e)
+    }
 
-        return crearCliente;
+    async getIvaTypes() {
+        return await Administracion.obtenerTiposIva();
+    }
+
+    async getClient(params) {
+        return await clientModel.findOne({id : params.id})
+    }
+
+    async getStateList () {
+        return await Administracion.obtenerListaProvincias();
     }
 }
 export default Clients

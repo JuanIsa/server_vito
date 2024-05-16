@@ -1,11 +1,22 @@
-function tipoIvaSegunNombre (nombreTipoIva) {
-    let idTipoIva = 0;
+import ivaTypesModel from "./models/modelIvaType.js";
+import statesModel from "./models/modelState.js";
 
+async function tipoIvaSegunNombre (nombreTipoIva) {
+    const ivaList = await ivaTypesModel.findOne({typeName: nombreTipoIva});
 
+    return ivaList.id;
+}
 
-    return idTipoIva;
+async function obtenerTiposIva () {
+    return await ivaTypesModel.find().sort({typeName: 1});
+}
+
+async function obtenerListaProvincias() {
+    return await statesModel.find().sort({stateName : 1});
 }
 
 export default {
-    tipoIvaSegunNombre
+    tipoIvaSegunNombre,
+    obtenerTiposIva,
+    obtenerListaProvincias
 }

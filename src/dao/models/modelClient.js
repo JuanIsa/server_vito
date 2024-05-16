@@ -3,14 +3,14 @@ import mongoose from "mongoose";
 const collection = 'clients';
 
 const contactSchema = new mongoose.Schema({
-    contactName : String,
-    phone: String,
+    nombre : String,
+    telefono: String,
     email: String
 });
 
 const clientSchema = new mongoose.Schema({
     active: Boolean,
-    idClient: {
+    id: {
         type: Number,
         required: true,
         unique: true
@@ -19,6 +19,11 @@ const clientSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true 
+    },
+    fantasyName : {
+        type: String,
+        required: true,
+        unique: true
     },
     streetName: {
         type: String,
@@ -38,13 +43,12 @@ const clientSchema = new mongoose.Schema({
         type: String
     },
     ivaType: {
-        type: Number
+        type: String
     },
     transportData: {
         type: {
             name: String,
-            observations: String,
-            transportDate: String
+            observations: String
         }
     },
     contactData: [contactSchema],

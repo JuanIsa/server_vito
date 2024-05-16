@@ -2,19 +2,11 @@ import userModel from './models/modelUsers.js';
 import userModelList from './models/modelListTypeUsers.js';
 import { createHash } from '../services/bcrypt.js';
 import jwt from 'jsonwebtoken';
+import FuncionesComunes from './handleCommonFunctions.js'
+import DataBase from './handleDataBase.js';
 
-function getDate(){
-    const now = new Date();
-    const dia = now.getDate().toString().padStart(2, '0');
-    const mes = (now.getMonth() + 1).toString().padStart(2, '0'); 
-    const año = now.getFullYear();
-    const hora = now.getHours().toString().padStart(2, '0');
-    const minutos = now.getMinutes().toString().padStart(2, '0');
-    const segundos = now.getSeconds().toString().padStart(2, '0');
-    const fechaHoraTexto = `${dia}/${mes}/${año} ${hora}:${minutos}:${segundos}`;
-    JSON.stringify(now);
-    return fechaHoraTexto;
-}
+const dataBase = new DataBase();
+
 class Users {
     async createUser(dataUser) {
         //Descompongo los datos de entrada.
@@ -31,15 +23,15 @@ class Users {
                 throw new Error('Ya existe un usuario con este nombre.');
             }
             //Verifico cuál es el último ID de ID de usuario y le sumo para que sea autoincremental
-            let lastIdUser= await this.findTheLastUser()+1;
+            let lastIdUser= await dataBase.findLastId(userModel) + 1;
             //Creo un usuario en la colecicción
             const createUser = await userModel.create({
                 active: true,
-                idUser: lastIdUser, 
+                id: lastIdUser, 
                 role,
                 userName,
                 password: hashedPass,
-                creationData: {date:getDate(),responsible:"root"},
+                creationData: {date:FuncionesComunes.getDate(),responsible:"root"},
                 modificationData: {date:"",responsible:""},
                 deleteData: {date:"",responsible:""}
             })
@@ -51,13 +43,12 @@ class Users {
         } 
 
         const updateUser = await userModel.findOneAndUpdate(
-            {idUser: idUser},
+            {id: idUser},
             {
                 role: role,
                 userName: userName,
                 password: hashedPass,
-                //TODO: agregarle fecha de edicion
-                modificationData: {date:getDate(),responsible:"root"},
+                modificationData: {date:FuncionesComunes.getDate(),responsible:"root"},
             },
             {new: true}
         )
@@ -66,36 +57,7 @@ class Users {
         
         return updateUser;
     }
-    async findTheLastUser() {
-        try {
-            //busco el último registro
-            const lastElement = await userModel.findOne().sort({ _id: -1 });
-            if (lastElement) {
-                //devuelvo el último id
-                return lastElement.idUser;
-            } else {
-                //Si la colección está vacia inicio el ID en cero
-                return 0;
-            }
-        } catch (error) {
-            return error;
-        }
-    }
-    async findLastTypeUser() {
-        try {
-            //busco el último registro
-            const lastElement = await userModelList.findOne().sort({ _id: -1 });
-            if (lastElement) {
-                //devuelvo el último id
-                return lastElement.idType;
-            } else {
-                //Si la colección está vacia inicio el ID en cero
-                return 0;
-            }
-        } catch (error) {
-            return error;
-        }
-    }
+
     async userLogin (dataUser) {
         //Genero un token único con los datos que me devuelve la base de datos para enviarlo como cookie encriptada
         //Utilizo el request de la petición a la base de datos para modificar los datos que se van a enviar al front y quitar datos sensibles
@@ -115,14 +77,15 @@ class Users {
     }
     async showOneUser(user){
         //Devuelve la lista completa de usuarios ordenados alfabéticamente de manera decendente.
-        const allUsers = await userModel.find(user)
+        const allUsers = await userModel.find({id: user.idUser})
         .then(data => data)
         .catch(e => e)
         return allUsers
     }
     async showOneTypeUser(user){
         //Devuelve la lista completa de usuarios ordenados alfabéticamente de manera decendente.
-        const allUsers = await userModelList.find(user)
+        console.log(user);
+        const allUsers = await userModelList.find({id: user.idType})
         .then(data => data)
         .catch(e => e)
         return allUsers
@@ -137,9 +100,8 @@ class Users {
         const {idUser, active} = dataUser;
         // Actualizar el campo 'email' del usuario con el ID dado, el parámetro { new: true }
         //me dice que una vez hecha la modificación devuelva el documento con los cambios hechos.
-        const allUsers = await userModel.findOneAndUpdate({idUser: idUser}, {active: active}, { new: true })
+        const allUsers = await userModel.findOneAndUpdate({id: idUser}, {active: active}, { new: true })
             .then(data => {
-                console.log(data);
                 return data;
             })
             .catch(e => {
@@ -161,13 +123,13 @@ class Users {
                 throw new Error('Ya existe un usuario con este nombre.');
             }
             //Verifico cuál es el último ID de ID de usuario y le sumo para que sea autoincremental
-            let lastIdRole= await this.findLastTypeUser()+1;
+            let lastIdRole = await dataBase.findLastId(userModelList) + 1;
             //Creo un usuario en la colecicción
             const createTypeUser = await userModelList.create({
                 active: true,
-                idType: lastIdRole, 
+                id: lastIdRole, 
                 role,
-                creationData: {date:getDate(),responsible:"root"},
+                creationData: {date:FuncionesComunes.getDate(),responsible:"root"},
                 modificationData: {date:"",responsible:""},
                 deleteData: {date:"",responsible:""}
             })
@@ -179,10 +141,10 @@ class Users {
         } 
 
         const updateTypeUser = await userModelList.findOneAndUpdate(
-            {idType: idType},
+            {id: idType},
             {
                 role: role,
-                modificationData: {date:getDate(),responsible:""},
+                modificationData: {date:FuncionesComunes.getDate(),responsible:""},
             },
             {new: true}
         )
@@ -195,7 +157,7 @@ class Users {
         const {idType, active} = dataTypeUser;
         // Actualizar el campo 'email' del usuario con el ID dado, el parámetro { new: true }
         //me dice que una vez hecha la modificación devuelva el documento con los cambios hechos.
-        const allTypeUsers = await userModelList.findOneAndUpdate({idType: idType}, {active: active}, { new: true })
+        const allTypeUsers = await userModelList.findOneAndUpdate({id: idType}, {active: active}, { new: true })
             .then(data => {
                 console.log(data);
                 return data;

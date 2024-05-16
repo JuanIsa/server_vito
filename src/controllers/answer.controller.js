@@ -7,6 +7,7 @@ export const handleResponse = async (promise, res) => {
     
     try {
         const data = await promise;
+
         if (data.errors) {
             respuesta.error = true;
             respuesta.message = data.message;
@@ -17,5 +18,8 @@ export const handleResponse = async (promise, res) => {
         respuesta.error = true;
         respuesta.message = e.message;
     }
+
+    console.log(respuesta);
+
     res.send(respuesta);
 };

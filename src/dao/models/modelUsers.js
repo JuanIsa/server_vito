@@ -4,7 +4,7 @@ const collection = 'userTypes';
 
 const userSchema = new mongoose.Schema({
     active: Boolean,
-    idUser: {
+    id: {
         type: Number,
         required: true,
         unique: true

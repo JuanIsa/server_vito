@@ -3,6 +3,10 @@ import ClientController from '../controllers/client.controller.js';
 
 const clientsRoute = Router();
 
+clientsRoute.get('/ivatypes', ClientController.clientIvaTypes);
+clientsRoute.get('/statelist', ClientController.clientStateList);
+clientsRoute.get('/clientlist', ClientController.clientClientList);
 clientsRoute.post('/create', ClientController.clientCreateClient);
+clientsRoute.post('/getclient', ClientController.clientGetClient);
 
 export default clientsRoute;
