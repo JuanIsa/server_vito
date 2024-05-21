@@ -5,6 +5,6 @@ import DataBase from './handleDataBase.js';
 const dataBase = new DataBase();
 
 class Articles {
-
+    
 }
 export default Articles;
