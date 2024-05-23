@@ -19,7 +19,5 @@ export const handleResponse = async (promise, res) => {
         respuesta.message = e.message;
     }
 
-    console.log(respuesta);
-
     res.send(respuesta);
 };

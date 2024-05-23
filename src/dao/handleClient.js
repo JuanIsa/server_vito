@@ -23,6 +23,7 @@ class Clients {
                 fantasyName : data.nombreFantasia,
                 streetName : data.direccion,
                 streetNumber : data.numeroDireccion,
+                location : data.localidad,
                 stateName : data.provincia,
                 cpNumber : data.codigoPostal,
                 cuitNumber : data.cuit,
@@ -49,6 +50,7 @@ class Clients {
                     fantasyName : data.nombreFantasia,
                     streetName : data.direccion,
                     streetNumber : data.numeroDireccion,
+                    location : data.localidad,
                     stateName : data.provincia,
                     cpNumber : data.codigoPostal,
                     cuitNumber : data.cuit,
@@ -69,7 +71,13 @@ class Clients {
     }
 
     async clientList() {
-        return await clientModel.find()
+        return await clientModel.find().sort({clientName: 1})
+        .then(data => data)
+        .catch(e => e)
+    }
+
+    async changeStatusClient(data){
+        return await clientModel.findOneAndUpdate({id: data.idCliente}, {active: data.estado}, { new: true })
         .then(data => data)
         .catch(e => e)
     }

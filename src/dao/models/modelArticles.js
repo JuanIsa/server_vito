@@ -20,6 +20,7 @@ const articleSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    nombreAnterior: String,
     descripcion: String,
     medidas: {
         type: medidaSchema,

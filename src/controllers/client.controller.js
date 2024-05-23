@@ -23,10 +23,15 @@ const clientClientList = async (req, res) => {
     handleResponse(instanceOfClients.clientList(), res);
 };
 
+const clientChangeStatus = async (req, res) => {
+    handleResponse(instanceOfClients.changeStatusClient(req.body), res);
+};
+
 export default {
     clientCreateClient,
     clientIvaTypes,
     clientStateList,
     clientGetClient,
-    clientClientList
+    clientClientList,
+    clientChangeStatus
 }

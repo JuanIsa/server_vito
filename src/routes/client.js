@@ -8,5 +8,6 @@ clientsRoute.get('/statelist', ClientController.clientStateList);
 clientsRoute.get('/clientlist', ClientController.clientClientList);
 clientsRoute.post('/create', ClientController.clientCreateClient);
 clientsRoute.post('/getclient', ClientController.clientGetClient);
+clientsRoute.post('/changestatus', ClientController.clientChangeStatus);
 
 export default clientsRoute;

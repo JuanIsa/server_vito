@@ -8,6 +8,7 @@ import { dirname, join } from 'path';
 //Servicios
 import mongoConnect from './services/mongoConnection.js';
 import usersRoute from './routes/users.js';
+import articleRoute from './routes/articles.js';
 import clientsRoute from './routes/client.js';
 
 mongoConnect();
@@ -27,6 +28,7 @@ app.use(express.static('public'));
 //Rutas
 app.use('/users', usersRoute);
 app.use('/client', clientsRoute);
+app.use('/article', articleRoute);
 //Ruta default de inicio del servidor.
 app.get("/", async (req, res) => {
   res.send("Todo Ok funcionando");

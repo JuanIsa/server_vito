@@ -5,6 +5,7 @@ const collection = 'clients';
 const contactSchema = new mongoose.Schema({
     nombre : String,
     telefono: String,
+    celular: String,
     email: String
 });
 
@@ -33,6 +34,7 @@ const clientSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    location: String,
     stateName: {
         type: String
     },
