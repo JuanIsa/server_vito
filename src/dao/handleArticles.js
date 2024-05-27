@@ -23,6 +23,7 @@ class Articles {
                 nombre: data.nombreArticulo,
                 nombreAnterior: data.nombreAnterior,
                 descripcion: data.descripcion,
+                tipoArticulo: data.tipoArticulo,
                 medidas: {
                     ancho: data.ancho,
                     alto: data.alto,
@@ -43,6 +44,7 @@ class Articles {
                     nombre: data.nombreArticulo,
                     nombreAnterior: data.nombreAnterior,
                     descripcion: data.descripcion,
+                    tipoArticulo: data.tipoArticulo,
                     medidas: {
                         ancho: data.ancho,
                         alto: data.alto,

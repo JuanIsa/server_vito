@@ -22,6 +22,7 @@ const articleSchema = new mongoose.Schema({
     },
     nombreAnterior: String,
     descripcion: String,
+    tipoArticulo: String,
     medidas: {
         type: medidaSchema,
     },

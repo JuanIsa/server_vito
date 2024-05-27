@@ -31,8 +31,7 @@ const clientSchema = new mongoose.Schema({
         required: true
     },
     streetNumber: {
-        type: Number,
-        required: true
+        type: Number
     },
     location: String,
     stateName: {
