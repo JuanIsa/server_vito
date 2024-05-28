@@ -26,6 +26,7 @@ const articleSchema = new mongoose.Schema({
     medidas: {
         type: medidaSchema,
     },
+    relacionesArticulos: [Number],
     creationData:{
         type: {
             date: String,

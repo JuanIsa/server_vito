@@ -8,8 +8,6 @@ class Articles {
     async createArticle(data) {
         const articuloExistente = await articleModel.findOne({ nombre : data.nombreArticulo });
 
-        console.log(data, articuloExistente);
-
         if(articuloExistente && (data.idArticulo == 0 || data.idArticulo != articuloExistente.id)) {
             throw new Error('Ya existe un artículo con este nombre.');
         }
@@ -59,6 +57,91 @@ class Articles {
         }
     }
 
+    async createAccesory(data) {
+        const articuloExistente = await articleModel.findOne({ nombre : data.nombreArticulo });
+
+        if(articuloExistente && (data.idArticulo == 0 || data.idArticulo != articuloExistente.id)) {
+            throw new Error('Ya existe un accesorio con este nombre.');
+        }
+
+        if(data.idArticulo == 0) {
+            let ultimoIdArticulo = await dataBase.findLastId(articleModel) + 1;
+
+            return await articleModel.create({
+                active: true,
+                id: ultimoIdArticulo, 
+                nombre: data.nombreArticulo,
+                descripcion: data.descripcion,
+                tipoArticulo: data.tipoArticulo,
+                relacionesArticulos: data.relacionesArticulos,
+                creationData: {date:FuncionesComunes.getDate(),responsible:"root"},
+                modificationData: {date:"",responsible:""},
+                deleteData: {date:"",responsible:""}
+            })
+            //Deuelvo los datos de la creación o del error al front
+            .then(data => data)
+            .catch(e => e)
+        } else {
+            return await articleModel.findOneAndUpdate(
+                {id: data.idArticulo},
+                {
+                    active: true,
+                    nombre: data.nombreArticulo,
+                    descripcion: data.descripcion,
+                    tipoArticulo: data.tipoArticulo,
+                    relacionesArticulos: data.relacionesArticulos,
+                    modificationData: {date:FuncionesComunes.getDate(),responsible:"root"},
+                },
+                {new: true}
+            )
+            .then(data => data)
+            .catch(e => e)
+        }
+    }
+
+    async createService(data) {
+        const articuloExistente = await articleModel.findOne({ nombre : data.nombreArticulo });
+
+        if(articuloExistente && (data.idArticulo == 0 || data.idArticulo != articuloExistente.id)) {
+            throw new Error('Ya existe un servicio con este nombre.');
+        }
+
+        if(data.idArticulo == 0) {
+            let ultimoIdArticulo = await dataBase.findLastId(articleModel) + 1;
+
+            return await articleModel.create({
+                active: true,
+                id: ultimoIdArticulo, 
+                nombre: data.nombreArticulo,
+                descripcion: data.descripcion,
+                tipoArticulo: data.tipoArticulo,
+                creationData: {date:FuncionesComunes.getDate(),responsible:"root"},
+                modificationData: {date:"",responsible:""},
+                deleteData: {date:"",responsible:""}
+            })
+            //Deuelvo los datos de la creación o del error al front
+            .then(data => data)
+            .catch(e => e)
+        } else {
+            return await articleModel.findOneAndUpdate(
+                {id: data.idArticulo},
+                {
+                    active: true,
+                    nombre: data.nombreArticulo,
+                    descripcion: data.descripcion,
+                    tipoArticulo: data.tipoArticulo,
+                    modificationData: {
+                        date: FuncionesComunes.getDate(),
+                        responsible: "root"
+                    },
+                },
+                {new: true}
+            )
+            .then(data)
+            .catch(e => e)
+        }
+    }
+
     async getArticle(params) {
         return await articleModel.findOne({id : params.idArticulo})
     }
@@ -71,8 +154,33 @@ class Articles {
 
     async listArticle() {
         return await articleModel.find().sort({nombre : 1})
-        .then(data => data)
+        .then(data => {
+            data.forEach(articulo => {
+                articulo.accesorios = [];
+
+                console.log(articulo.accesorios);
+            
+                if (articulo.tipoArticulo == 'ACCESORIO' && articulo.relacionesArticulos) {
+                    articulo.relacionesArticulos.forEach(idArticulo => {
+                        const accesorio = data.find(a => a.id === idArticulo);
+                        console.log(accesorio);
+                        if (accesorio) {
+                            articulo.accesorios.push(accesorio);
+                        }
+                    });
+                }
+            /*
+                console.log("---------------------------------");
+                console.log(articulo);*/
+            });
+
+            return data;
+        })
         .catch(e => e)
+    }
+
+    async getAccesoriesArticles(data) {
+        return null;
     }
 }
 export default Articles;
