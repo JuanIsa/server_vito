@@ -154,28 +154,7 @@ class Articles {
 
     async listArticle() {
         return await articleModel.find().sort({nombre : 1})
-        .then(data => {
-            data.forEach(articulo => {
-                articulo.accesorios = [];
-
-                console.log(articulo.accesorios);
-            
-                if (articulo.tipoArticulo == 'ACCESORIO' && articulo.relacionesArticulos) {
-                    articulo.relacionesArticulos.forEach(idArticulo => {
-                        const accesorio = data.find(a => a.id === idArticulo);
-                        console.log(accesorio);
-                        if (accesorio) {
-                            articulo.accesorios.push(accesorio);
-                        }
-                    });
-                }
-            /*
-                console.log("---------------------------------");
-                console.log(articulo);*/
-            });
-
-            return data;
-        })
+        .then(data => data)
         .catch(e => e)
     }
 

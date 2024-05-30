@@ -90,6 +90,10 @@ class Clients {
         return await clientModel.findOne({id : params.id})
     }
 
+    async getClientId(name) {
+        return await clientModel.findOne({clientName: name})
+    }
+
     async getStateList () {
         return await Administracion.obtenerListaProvincias();
     }
