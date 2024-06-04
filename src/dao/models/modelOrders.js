@@ -25,10 +25,13 @@ const orderSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    fechaPedido: String,
+    fechaPedido: Date,
+    estadoPedido: String,
     observaciones: String,
     transporte: String,
     observacionesTransporte: String,
+    fechaCumplido: Date,
+    fechaAnulado: Date,
     articulos: [articleSchema],
     creationData:{
         type: {

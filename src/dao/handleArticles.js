@@ -146,6 +146,10 @@ class Articles {
         return await articleModel.findOne({id : params.idArticulo})
     }
 
+    async getArticleId(nombre) {
+        return await articleModel.findOne({nombre : nombre})
+    }
+
     async changeStatusArticule(data){
         return await articleModel.findOneAndUpdate({id: data.idArticulo}, {active: data.estado}, { new: true })
         .then(data => data)
