@@ -23,6 +23,10 @@ const articleList = async (req, res) => {
     handleResponse(instanceOfArticles.listArticle(req.body), res);
 };
 
+const articleListWithPrices = async (req, res) => {
+    handleResponse(instanceOfArticles.listArticleWithPrices(req.body), res);
+};
+
 const articleChangeStatus = async (req, res) => {
     handleResponse(instanceOfArticles.changeStatusArticule(req.body), res);
 }
@@ -38,5 +42,6 @@ export default {
     articleChangeStatus,
     articleCreateAccesory,
     articleCreateService,
-    articleGetAccesories
+    articleGetAccesories,
+    articleListWithPrices
 }

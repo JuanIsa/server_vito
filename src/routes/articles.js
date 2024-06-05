@@ -8,6 +8,7 @@ articleRoute.post('/createaccesory', ArticleController.articleCreateAccesory);
 articleRoute.post('/createservice', ArticleController.articleCreateService);
 articleRoute.post('/getarticle', ArticleController.articleGetArticle);
 articleRoute.get('/list', ArticleController.articleList);
+articleRoute.get('/listwithprices', ArticleController.articleListWithPrices);
 articleRoute.post('/changestatus', ArticleController.articleChangeStatus);
 articleRoute.post('/getaccesoriesarticles', ArticleController.articleGetAccesories);
 

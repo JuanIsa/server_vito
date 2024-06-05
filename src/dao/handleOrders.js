@@ -64,8 +64,6 @@ class Orders {
     async getOrders(params) {
         let filtros = {};
 
-        console.log(params);
-
         // Filtrar por fechas si están presentes en los filtros
         if (params.fechaPedidoDesde) {
             filtros.fechaPedido = {
@@ -74,7 +72,7 @@ class Orders {
             };
         }
 
-        if (params.estado) {
+        if (params.estado && params.estado != 'TODOS') {
             filtros.estadoPedido = params.estado;
         }
 
@@ -89,7 +87,41 @@ class Orders {
         }
         
         return await orderModel.find(filtros)
-            .then(data => data)
+            .then(async data => {
+                let respuesta = await Promise.all(data.map(async datosPedido => {
+                    const datosCliente = await clients.getClient({id : datosPedido.idCliente});
+
+                    let articulos = await Promise.all(datosPedido.articulos.map(async articulo => {
+                        const datosArticulo = await articles.getArticle({idArticulo : articulo.idArticulo});
+
+                        let articuloActual = {
+                            id: articulo.idArticulo,
+                            nombre: datosArticulo.nombre,
+                            cantidad: articulo.cantidad
+                        };
+
+                        return articuloActual;
+                    }));
+                    
+                    let pedidoActual = {
+                        id: datosPedido.id,
+                        idCliente: datosPedido.idCliente,
+                        nombreCliente: datosCliente.clientName,
+                        observaciones: datosPedido.observaciones,
+                        transporte: datosPedido.transporte,
+                        observacionesTransporte: datosPedido.observacionesTransporte,
+                        articulos: articulos,
+                        fechaPedido: datosPedido.fechaPedido,
+                        createData: datosPedido.createData,
+                        estadoPedido: datosPedido.estadoPedido,
+                        modificationData: datosPedido.modificationData
+                    }
+                    
+                    return pedidoActual;
+                }));
+                
+                return respuesta;
+            })
             .catch(e => e)
     }
 }
