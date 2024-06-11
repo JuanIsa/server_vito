@@ -4,7 +4,7 @@ const collection = 'articleprices';
 
 const detallesArticulos = new mongoose.Schema({
     idArticulo: Number,
-    precio: Number
+    precio: Number,
 });
 
 const articlePricesSchema = new mongoose.Schema({
@@ -14,6 +14,8 @@ const articlePricesSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    observaciones: String,
+    fecha: Date,
     porcentaje: Number,
     articulos: [detallesArticulos],
     creationData:{

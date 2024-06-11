@@ -35,6 +35,14 @@ const articleGetAccesories = async (req, res) => {
     handleResponse(instanceOfArticles.getAccesoriesArticles(req.body), res);
 }
 
+const articleCreatePricesList = async (req, res) => {
+    handleResponse(instanceOfArticles.updateArticlePricesList(req.body), res);
+}
+
+const articleGetPricesList = async (req, res) => {
+    handleResponse(instanceOfArticles.getArticlePriceList(req.body), res);
+}
+
 export default {
     articleCreateArticle,
     articleGetArticle,
@@ -43,5 +51,7 @@ export default {
     articleCreateAccesory,
     articleCreateService,
     articleGetAccesories,
-    articleListWithPrices
+    articleListWithPrices,
+    articleCreatePricesList,
+    articleGetPricesList
 }

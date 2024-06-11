@@ -164,29 +164,81 @@ class Articles {
         .catch(e => e)
     }
 
-    async listArticleWithPrices() {
+    async listArticleWithPrices(data) {
+        let idLista = 0;
+
+        if(data.id) {
+            idLista = data.id;
+        }
+
         return await articleModel.find().sort({nombre : 1})
         .then(async data => {
             let respuesta = await Promise.all(data.map(async articulo => {
-                let precioActual = 0.0;
-                const precioArticulo  = await Administracion.obtenerPrecioActualizadoArticulo(articulo.id);
-
-                if(precioArticulo && precioArticulo.precio) {
-                    precioActual = precioArticulo.precio;
-                }
+                const precioArticulo = await Administracion.obtenerPrecioActualizadoArticulo(articulo.id, idLista);
 
                 return {
                     id: articulo.id,
                     nombre: articulo.nombre,
                     descripcion: articulo.descripcion,
-                    precio: precioActual,
+                    precio: precioArticulo,
                     tipoArticulo: articulo.tipoArticulo
                 };
             }));
-            
+
             return respuesta;
         })
         .catch(e => e)
+    }
+
+    async updateArticlePricesList(data) {
+        if(data.idLista == 0) {
+            let ultimoIdLista = await dataBase.findLastId(articlePricesModel) + 1;
+
+            return await articlePricesModel.create({
+                active: true,
+                id: ultimoIdLista, 
+                observaciones: data.observaciones,
+                porcentaje: data.porcentajeAumento,
+                articulos: data.articulos,
+                fecha: new Date(),
+                creationData: {
+                    date: FuncionesComunes.getDate(),
+                    responsible:"root"
+                },
+                modificationData: {
+                    date: "",
+                    responsible: ""
+                },
+                deleteData: {
+                    date: "",
+                    responsible: ""
+                }
+            })
+            //Deuelvo los datos de la creación o del error al front
+            .then(data => data)
+            .catch(e => e)
+        } else {
+            return await articlePricesModel.findOneAndUpdate(
+                {id: data.idLista},
+                {
+                    active: true,
+                    observaciones: data.observaciones,
+                    porcentaje: data.porcentajeAumento,
+                    articulos: data.articulos,
+                    modificationData: {
+                        date: FuncionesComunes.getDate(),
+                        responsible: "root"
+                    },
+                },
+                {new: true}
+            )
+            .then(data)
+            .catch(e => e)
+        }
+    }
+
+    async getArticlePriceList(data) {
+        return await articlePricesModel.findOne({id : data.id})
     }
 }
 export default Articles;
