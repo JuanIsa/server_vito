@@ -27,11 +27,16 @@ const clientChangeStatus = async (req, res) => {
     handleResponse(instanceOfClients.changeStatusClient(req.body), res);
 };
 
+const clientCreateTicket = async (req, res) => {
+    handleResponse(instanceOfClients.clientCreateTicket(req.body), res);
+};
+
 export default {
     clientCreateClient,
     clientIvaTypes,
     clientStateList,
     clientGetClient,
     clientClientList,
-    clientChangeStatus
+    clientChangeStatus,
+    clientCreateTicket
 }
