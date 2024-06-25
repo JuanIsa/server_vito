@@ -11,6 +11,7 @@ import usersRoute from './routes/users.js';
 import articleRoute from './routes/articles.js';
 import clientsRoute from './routes/client.js';
 import ordersRoute from './routes/orders.js';
+import ticketsRoute from './routes/ticket.js';
 
 mongoConnect();
 const __filename = fileURLToPath(import.meta.url);
@@ -31,6 +32,7 @@ app.use('/users', usersRoute);
 app.use('/client', clientsRoute);
 app.use('/article', articleRoute);
 app.use('/order', ordersRoute);
+app.use('/ticket', ticketsRoute);
 //Ruta default de inicio del servidor.
 app.get("/", async (req, res) => {
   res.send("Todo Ok funcionando");

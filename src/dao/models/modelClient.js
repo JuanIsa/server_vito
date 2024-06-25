@@ -53,6 +53,7 @@ const clientSchema = new mongoose.Schema({
         }
     },
     contactData: [contactSchema],
+    imported: Boolean,
     creationData:{
         type: {
             date: String,

@@ -176,8 +176,6 @@ class Articles {
             let respuesta = await Promise.all(data.map(async articulo => {
                 const precioArticulo = await Administracion.obtenerPrecioActualizadoArticulo(articulo.id, idLista);
 
-                console.log(precioArticulo);
-
                 return {
                     id: articulo.id,
                     nombre: articulo.nombre,

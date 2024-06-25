@@ -18,7 +18,6 @@ class Users {
         if(idUser == 0) {
             //Reviso si ya existe el usuario en la base de datos.
             const usuarioExistente = await userModel.findOne({ userName });
-            console.log(usuarioExistente);
             if (usuarioExistente) {
                 throw new Error('Ya existe un usuario con este nombre.');
             }
@@ -84,7 +83,6 @@ class Users {
     }
     async showOneTypeUser(user){
         //Devuelve la lista completa de usuarios ordenados alfabéticamente de manera decendente.
-        console.log(user);
         const allUsers = await userModelList.find({id: user.idType})
         .then(data => data)
         .catch(e => e)
@@ -105,7 +103,6 @@ class Users {
                 return data;
             })
             .catch(e => {
-                console.log(e);
                 return e;
             })
         return allUsers
@@ -159,11 +156,9 @@ class Users {
         //me dice que una vez hecha la modificación devuelva el documento con los cambios hechos.
         const allTypeUsers = await userModelList.findOneAndUpdate({id: idType}, {active: active}, { new: true })
             .then(data => {
-                console.log(data);
                 return data;
             })
             .catch(e => {
-                console.log(e);
                 return e;
             })
         return allTypeUsers
