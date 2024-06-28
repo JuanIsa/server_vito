@@ -11,6 +11,18 @@ function getDate(){
     return fechaHoraTexto;
 }
 
+function getDateAMD() {
+    let hoy = new Date();    
+    let año = hoy.getFullYear();
+    let mes = hoy.getMonth() + 1;
+    let dia = hoy.getDate();
+    mes = mes < 10 ? '0' + mes : mes;
+    dia = dia < 10 ? '0' + dia : dia;
+    
+    return `${año}${mes}${dia}`;
+}
+
 export default {
-    getDate
+    getDate,
+    getDateAMD
 }

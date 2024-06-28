@@ -1,3 +1,8 @@
+const DatosEmpresa = {
+    CUIT: 20409378472,
+    PUNTO_VENTA: 1
+}
+
 const TiposResponsable = {
     TIPO_RESP_IVA_RI: 1,
 	TIPO_RESP_IVA_RNI: 2,
@@ -49,6 +54,10 @@ const TiposMoneda = {
     TIPO_MONEDA_DOLAR: 'DOL'
 }
 
+const IdTiposMoneda = {
+    TIPO_MONEDA_PESO: 1
+}
+
 const TiposTributo = {
     TRIBUTO_IMPUESTOS_NACIONALES: 1,
 	TRIBUTO_IMPUESTOS_PROVINCIALES: 2,
@@ -60,7 +69,8 @@ const TiposTributo = {
 const TiposDocumento = {
     TIPO_DOC_CUIT: 80,
 	TIPO_DOC_CUIL: 86,
-	TIPO_DOC_DNI: 96
+	TIPO_DOC_DNI: 96,
+    TIPO_DOC_CONSUMIDOR_FINAL: 99
 }
 
 const TiposIVA = {
@@ -73,13 +83,20 @@ const TiposIVA = {
 	TIPO_IVA_5: 8,
 	TIPO_IVA_2_5: 9
 }
+
+const NumerosDocumento = {
+    NUMERO_DOCUMENTO_CONSUMIDOR_FINAL: 0
+}
   
 export default {
+    DatosEmpresa,
     TiposIVA,
     TiposConceptos,
     TiposComprobante,
     TiposMoneda,
     TiposTributo,
     TiposDocumento,
-    TiposResponsable
+    TiposResponsable,
+    IdTiposMoneda,
+    NumerosDocumento
 };
