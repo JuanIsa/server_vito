@@ -3,10 +3,12 @@ import DataBase from './handleDataBase.js';
 import Afip from '@afipsdk/afip.js';
 import ConstantesAfip from '../assets/afipglobals.js';
 import Clients from './handleClient.js';
+import Articles from './handleArticles.js';
 import ticketModel from './models/modelTicket.js';
 
 const dataBase = new DataBase();
 const clients = new Clients();
+const articles = new Articles();
 
 class Tickets {
     async getLastCAE() {
@@ -160,6 +162,107 @@ class Tickets {
         datosCliente.currentAccount.push(datosCuentaCorriente);
 
         datosCliente.save();
+    }
+
+    async getTickets(params) {
+        let filtros = {};
+
+        if (params.fechaDesde) {
+            filtros.fechaFactura = {
+                $gte: new Date(params.fechaDesde),
+                $lte: new Date(params.fechaHasta)
+            };
+        }
+
+        if (params.cliente) {
+            const datosCliente = await clients.getClientId(params.cliente);
+            filtros.idCliente = datosCliente.id;
+        }
+
+        return await ticketModel.find(filtros)
+            .then( async data => {
+                let respuesta = await Promise.all(data.map(async datosFactura => {
+                    const datosCliente = await clients.getClient({id : datosFactura.idCliente});
+
+                    let montoFactura = 0.0;
+
+                    let articulos = await Promise.all(datosFactura.detallesFactura.map(async articulo => {
+                        const datosArticulo = await articles.getArticle({idArticulo : articulo.idArticulo});
+
+                        let articuloActual = {
+                            id: articulo.idArticulo,
+                            nombreArticulo: datosArticulo.nombre,
+                            cantidad: articulo.cantidad,
+                            precioUnitario: articulo.precioUnitario
+                        };
+
+                        montoFactura += (articuloActual.cantidad * articuloActual.precioUnitario);
+
+                        return articuloActual;
+                    }));
+                    
+                    let facturaActual = {
+                        id: datosFactura.id,
+                        idCliente: datosFactura.idCliente,
+                        nombreCliente: datosCliente.clientName,
+                        montoTotal: montoFactura,
+                        observaciones: datosFactura.observaciones,
+                        tipoFactura: datosFactura.tipoFactura,
+                        descuento: datosFactura.descuento,
+                        cae: datosFactura.cae,
+                        detallesFactura: articulos,
+                        fechaFactura: datosFactura.fechaFactura
+                    }
+                    
+                    return facturaActual;
+                }));
+                
+                return respuesta;
+            })
+            .catch();
+    }
+
+    async getUnpaidTickets(params) {
+        let filtros = {
+            $or: [
+                { pagado: { $exists: false } },
+                { pagado: false } 
+            ]
+        };
+
+        if(params.cliente) {
+            const datosCliente = await clients.getClientId(params.cliente);
+            filtros.idCliente = datosCliente.id;
+        }
+
+        return await ticketModel.find(filtros)
+            .then(async data => {
+                let respuesta = await Promise.all(data.map(async datosFactura => {
+                    const datosCliente = await clients.getClient({id : datosFactura.idCliente});
+
+                    let montoFactura = 0.0;
+
+                    await Promise.all(datosFactura.detallesFactura.map(async articulo => {
+                        montoFactura += (articulo.cantidad * articulo.precioUnitario);
+                    }));
+                    
+                    let facturaActual = {
+                        id: datosFactura.id,
+                        idCliente: datosFactura.idCliente,
+                        nombreCliente: datosCliente.clientName,
+                        montoTotal: montoFactura,
+                        observaciones: datosFactura.observaciones,
+                        tipoFactura: datosFactura.tipoFactura,
+                        cae: datosFactura.cae,
+                        fechaFactura: datosFactura.fechaFactura
+                    }
+
+                    return facturaActual;
+                }));
+
+                return respuesta;
+            })
+            .catch();
     }
 }
 export default Tickets;

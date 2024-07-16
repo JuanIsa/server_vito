@@ -11,7 +11,17 @@ export const generateTicket = async (req, res) => {
     handleResponse(instanceOfTickets.generateTicket(req.body), res);
 };
 
+export const getTickets = async (req, res) => {
+    handleResponse(instanceOfTickets.getTickets(req.body), res);
+}
+
+export const getUnpaidTickets = async (req, res) => {
+    handleResponse(instanceOfTickets.getUnpaidTickets(req.body), res);
+}
+
 export default {
     getLastCAE,
-    generateTicket
+    generateTicket,
+    getTickets,
+    getUnpaidTickets
 }

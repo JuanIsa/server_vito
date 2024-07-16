@@ -39,6 +39,10 @@ const ticketSchema = new mongoose.Schema({
             type: String,
             required: true
         },
+        pagado: {
+            type: Boolean,
+            default: false
+        },
         fechaVencimientoCae: Date,
         creationData:{
             type: {
