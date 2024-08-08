@@ -1,6 +1,8 @@
 import ivaTypesModel from "./models/modelIvaType.js";
 import statesModel from "./models/modelState.js";
 import articlePricesModel from "./models/modelArticlePrices.js";
+import banksModel from "./models/modelBanks.js";
+import retentionTypesModel from "./models/modelRetentionTypes.js";
 import DataBase from "./handleDataBase.js"
 
 const dataBase = new DataBase();
@@ -17,6 +19,14 @@ async function obtenerTiposIva () {
 
 async function obtenerListaProvincias() {
     return await statesModel.find().sort({stateName : 1});
+}
+
+async function obtenerListaBancos() {
+    return await banksModel.find().sort({nombre : 1});
+}
+
+async function obtenerListaRetenciones() {
+    return await retentionTypesModel.find().sort({nombre : 1});
 }
 
 async function obtenerPrecioActualizadoArticulo(idArticulo, idLista) {
@@ -40,5 +50,7 @@ export default {
     tipoIvaSegunNombre,
     obtenerTiposIva,
     obtenerListaProvincias,
-    obtenerPrecioActualizadoArticulo
+    obtenerPrecioActualizadoArticulo,
+    obtenerListaBancos,
+    obtenerListaRetenciones
 }
