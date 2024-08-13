@@ -19,9 +19,19 @@ export const getUnpaidTickets = async (req, res) => {
     handleResponse(instanceOfTickets.getUnpaidTickets(req.body), res);
 }
 
+export const createPayment = async (req, res) => {
+    handleResponse(instanceOfTickets.createPayment(req.body), res);
+}
+
+export const getPayments = async (req, res) => {
+    handleResponse(instanceOfTickets.getPayments(req.body), res);
+}
+
 export default {
     getLastCAE,
     generateTicket,
     getTickets,
-    getUnpaidTickets
+    getUnpaidTickets,
+    createPayment,
+    getPayments
 }

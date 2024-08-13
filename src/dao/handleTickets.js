@@ -5,6 +5,7 @@ import ConstantesAfip from '../assets/afipglobals.js';
 import Clients from './handleClient.js';
 import Articles from './handleArticles.js';
 import ticketModel from './models/modelTicket.js';
+import paymentsModel from './models/modelPayments.js';
 
 const dataBase = new DataBase();
 const clients = new Clients();
@@ -121,7 +122,7 @@ class Tickets {
 
         let ultimoIdFactura = await dataBase.findLastId(ticketModel) + 1;
 
-        await ticketModel.create({
+        return await ticketModel.create({
             active: true,
             id: ultimoIdFactura,
             idCliente: datosFactura.idCliente,
@@ -146,22 +147,22 @@ class Tickets {
                 responsible:""
             }
         })
-        .then(data => data)
+        .then(() => {
+            let datosCuentaCorriente = {
+                id: 0,
+                tipoConcepto: nombreTipoFactura,
+                idConcepto: ultimoIdFactura,
+                debe: (parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)) + parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) + parseFloat(importe_exento_iva.toFixed(2))).toFixed(2),
+                haber: 0.0,
+                observaciones: datosFactura.observaciones,
+                fecha: new Date()
+            }
+    
+            datosCliente.currentAccount.push(datosCuentaCorriente);
+    
+            return datosCliente.save();
+        })
         .catch(e => e)
-
-        let datosCuentaCorriente = {
-            id: 0,
-            tipoConcepto: nombreTipoFactura,
-            idConcepto: ultimoIdFactura,
-            debe: (parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)) + parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) + parseFloat(importe_exento_iva.toFixed(2))).toFixed(2),
-            haber: 0.0,
-            observaciones: datosFactura.observaciones,
-            fecha: new Date()
-        }
-
-        datosCliente.currentAccount.push(datosCuentaCorriente);
-
-        datosCliente.save();
     }
 
     async getTickets(params) {
@@ -200,6 +201,8 @@ class Tickets {
 
                         return articuloActual;
                     }));
+
+                    montoFactura = montoFactura * (1 - datosFactura.descuento / 100);
                     
                     let facturaActual = {
                         id: datosFactura.id,
@@ -245,6 +248,10 @@ class Tickets {
                     await Promise.all(datosFactura.detallesFactura.map(async articulo => {
                         montoFactura += (articulo.cantidad * articulo.precioUnitario);
                     }));
+
+                    montoFactura = montoFactura * (1 - datosFactura.descuento / 100);
+
+                    montoFactura -= await this.obtenerMontoTotalPagadoComprobante(datosFactura.id);
                     
                     let facturaActual = {
                         id: datosFactura.id,
@@ -260,6 +267,140 @@ class Tickets {
                     return facturaActual;
                 }));
 
+                return respuesta;
+            })
+            .catch();
+    }
+
+    async createPayment(params) {
+        let ultimoIdPago = await dataBase.findLastId(paymentsModel) + 1;
+        let datosCliente = await clients.getClientId(params.cliente);
+
+        if(params.idPago == 0) {
+            await paymentsModel.create({
+                active: true,
+                id: ultimoIdPago,
+                idCliente: datosCliente.id,
+                importe: params.totalAPagar,
+                pagos: params.pagos,
+                fechaPago: new Date(),
+                retenciones: params.retenciones,
+                comprobantes: params.comprobantes,                           
+                creationData: {
+                    date: FuncionesComunes.getDate(),
+                    responsible:"root"
+                },
+                modificationData: {
+                    date:"",
+                    responsible:""
+                },
+                deleteData: {
+                    date:"",
+                    responsible:""
+                }
+            })
+            .then(data => {
+                let datosCuentaCorriente = {
+                    id: 0,
+                    tipoConcepto: 'PAGO FACTURA',
+                    idConcepto: ultimoIdPago,
+                    debe: 0.0,
+                    haber: params.totalAPagar,
+                    observaciones: '',
+                    fecha: new Date()
+                }
+    
+                datosCliente.currentAccount.push(datosCuentaCorriente);
+
+                datosCliente.save();
+
+                params.comprobantes.forEach(async comprobanteActual => {
+                    await this.actualizarTotalPagadoComprobante(comprobanteActual.numeroComprobante);
+                })
+
+                return data;
+            })
+            .catch(e => e)
+        } else {
+
+        }
+    }
+
+    async obtenerMontoTotalPagadoComprobante(numeroComprobante) {
+        const pagos = await paymentsModel.aggregate([
+            { $unwind: "$comprobantes" },
+            { $match: { "comprobantes.numeroComprobante": numeroComprobante } },
+            { $group: {
+                _id: null,
+                totalPagado: { $sum: "$comprobantes.montoAPagar" }
+            }}
+        ]);
+
+        return pagos.length > 0 ? pagos[0].totalPagado : 0;
+    }
+
+    async actualizarTotalPagadoComprobante(numeroComprobante) {
+        const totalPagadoFactura = await this.obtenerMontoTotalPagadoComprobante(numeroComprobante);
+
+        const factura = await ticketModel.findOne({ id: numeroComprobante }).exec();
+
+        let totalAntesDescuento = 0;
+        factura.detallesFactura.forEach(detalle => {
+            const subtotalArticulo = detalle.cantidad * detalle.precioUnitario;
+            totalAntesDescuento += subtotalArticulo - detalle.descuento;
+        });
+
+        const totalConDescuento = totalAntesDescuento * (1 - factura.descuento / 100);
+
+        const totalFactura = Math.max(totalConDescuento, 0);
+
+        let pagado = false;
+
+        if(totalFactura == totalPagadoFactura) {
+            pagado = true;
+        }
+
+        return await ticketModel.updateOne(
+            { id: numeroComprobante }, 
+            { $set: { pagado: pagado } } 
+        );
+    }
+
+    async getPayments(params) {
+        let filtros = {};
+
+        if (params.fechaDesde) {
+            filtros.fechaFactura = {
+                $gte: new Date(params.fechaDesde),
+                $lte: new Date(params.fechaHasta)
+            };
+        }
+
+        if (params.cliente) {
+            const datosCliente = await clients.getClientId(params.cliente);
+            filtros.idCliente = datosCliente.id;
+        }
+
+        return await paymentsModel.find(filtros)
+            .then( async data => {
+                let respuesta = await Promise.all(data.map(async datosCobranza => {
+                    const datosCliente = await clients.getClient({id : datosCobranza.idCliente});
+                    
+                    let cobranzaActual = {
+                        id: datosCobranza.id,
+                        idCliente: datosCobranza.idCliente,
+                        nombreCliente: datosCliente.clientName,
+                        fechaPago: datosCobranza.fechaPago,
+                        importe: datosCobranza.importe,
+                        observaciones: datosCobranza.observaciones,
+                        comprobantes: datosCobranza.comprobantes,
+                        pagos: datosCobranza.pagos,
+                        retenciones: datosCobranza.retenciones,
+                    }
+                    
+                    return cobranzaActual;
+                }));
+                
                 return respuesta;
             })
             .catch();
