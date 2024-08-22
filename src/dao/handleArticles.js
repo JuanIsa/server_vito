@@ -171,7 +171,21 @@ class Articles {
             idLista = data.id;
         }
 
-        return await articleModel.find().sort({nombre : 1})
+        let ultimaListaPrecios = {
+            articulos: null,
+            idLista: 0,
+            porcentaje: 0,
+            fecha: null
+        }
+
+        const datosUltimaListaPrecios = await this.getLastArticlePriceList();
+
+        ultimaListaPrecios.fecha = datosUltimaListaPrecios.fecha;
+        ultimaListaPrecios.porcentaje = datosUltimaListaPrecios.porcentaje;
+        ultimaListaPrecios.idLista = datosUltimaListaPrecios.id;
+        
+
+        ultimaListaPrecios.articulos = await articleModel.find().sort({nombre : 1})
         .then(async data => {
             let respuesta = await Promise.all(data.map(async articulo => {
                 const precioArticulo = await Administracion.obtenerPrecioActualizadoArticulo(articulo.id, idLista);
@@ -188,6 +202,8 @@ class Articles {
             return respuesta;
         })
         .catch(e => e)
+
+        return ultimaListaPrecios;
     }
 
     async updateArticlePricesList(data) {
@@ -239,6 +255,10 @@ class Articles {
 
     async getArticlePriceList(data) {
         return await articlePricesModel.findOne({id : data.id})
+    }
+
+    async getLastArticlePriceList() {
+        return await articlePricesModel.findOne().sort({id: -1});
     }
 }
 export default Articles;
