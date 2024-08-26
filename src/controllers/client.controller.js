@@ -31,6 +31,10 @@ const clientCreateTicket = async (req, res) => {
     handleResponse(instanceOfClients.clientCreateTicket(req.body), res);
 };
 
+const clientGetCurrentAccount = async (req, res) => {
+    handleResponse(instanceOfClients.clientGetCurrentAccount(req.body), res);
+};
+
 export default {
     clientCreateClient,
     clientIvaTypes,
@@ -38,5 +42,6 @@ export default {
     clientGetClient,
     clientClientList,
     clientChangeStatus,
-    clientCreateTicket
+    clientCreateTicket,
+    clientGetCurrentAccount
 }

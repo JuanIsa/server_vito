@@ -46,11 +46,29 @@ async function obtenerPrecioActualizadoArticulo(idArticulo, idLista) {
     }
 }
 
+async function obtenerUltimoAumentoArticulo(idArticulo, idLista) {
+    if(idLista == 0) {
+        idLista = await dataBase.findLastId(articlePricesModel);
+    }
+
+    const aumentoArticulo = await articlePricesModel.findOne(
+        { id : idLista, "articulos.idArticulo": idArticulo }, 
+        { articulos: { $elemMatch: { idArticulo: idArticulo } } }
+    ).sort({ id: -1 });
+
+    if(aumentoArticulo) {
+        return aumentoArticulo.articulos[0].porcentajeAumento
+    } else {
+        return 0;
+    }
+}
+
 export default {
     tipoIvaSegunNombre,
     obtenerTiposIva,
     obtenerListaProvincias,
     obtenerPrecioActualizadoArticulo,
+    obtenerUltimoAumentoArticulo,
     obtenerListaBancos,
     obtenerListaRetenciones
 }

@@ -183,19 +183,20 @@ class Articles {
         ultimaListaPrecios.fecha = datosUltimaListaPrecios.fecha;
         ultimaListaPrecios.porcentaje = datosUltimaListaPrecios.porcentaje;
         ultimaListaPrecios.idLista = datosUltimaListaPrecios.id;
-        
 
         ultimaListaPrecios.articulos = await articleModel.find().sort({nombre : 1})
         .then(async data => {
             let respuesta = await Promise.all(data.map(async articulo => {
                 const precioArticulo = await Administracion.obtenerPrecioActualizadoArticulo(articulo.id, idLista);
+                const aumentoArticulo = await Administracion.obtenerUltimoAumentoArticulo(articulo.id, idLista);
 
                 return {
                     id: articulo.id,
                     nombre: articulo.nombre,
                     descripcion: articulo.descripcion,
                     precio: precioArticulo,
-                    tipoArticulo: articulo.tipoArticulo
+                    tipoArticulo: articulo.tipoArticulo,
+                    porcentajeAumento: aumentoArticulo
                 };
             }));
 

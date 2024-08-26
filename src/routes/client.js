@@ -9,6 +9,7 @@ clientsRoute.get('/facturar', ClientController.clientCreateTicket);
 clientsRoute.get('/clientlist', ClientController.clientClientList);
 clientsRoute.post('/create', ClientController.clientCreateClient);
 clientsRoute.post('/getclient', ClientController.clientGetClient);
+clientsRoute.post('/getcurrentaccount', ClientController.clientGetCurrentAccount);
 clientsRoute.post('/changestatus', ClientController.clientChangeStatus);
 
 export default clientsRoute;

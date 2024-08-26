@@ -5,6 +5,7 @@ const collection = 'articleprices';
 const detallesArticulos = new mongoose.Schema({
     idArticulo: Number,
     precio: Number,
+    porcentajeAumento: Number
 });
 
 const articlePricesSchema = new mongoose.Schema({

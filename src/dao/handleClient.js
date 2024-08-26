@@ -102,5 +102,43 @@ class Clients {
 
     async clientCreateTicket() {
     }
+
+    async clientGetCurrentAccount(data) {
+        try {
+            const client = await clientModel.findOne(
+                { id: data.idCliente },
+                { 
+                    clientName: 1, 
+                    fantasyName: 1, 
+                    streetName: 1, 
+                    streetNumber: 1, 
+                    location: 1, 
+                    stateName: 1, 
+                    cpNumber: 1, 
+                    cuitNumber: 1, 
+                    ivaType: 1, 
+                    transportData: 1, 
+                    contactData: 1, 
+                    currentAccount: 1 
+                }
+            ).exec();
+
+            const respuesta = {
+                datosCliente: {
+                    nombre: client.clientName,
+                    nombreFantasia: client.fantasyName,
+                    cuit: client.cuitNumber,
+                    iva: client.ivaType
+                },
+                cuentaCorriente: client.currentAccount
+            };
+
+            console.log(respuesta);
+    
+            return respuesta;
+        } catch (error) {
+            throw error;
+        }
+    }
 }
 export default Clients
