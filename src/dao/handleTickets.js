@@ -12,11 +12,35 @@ const clients = new Clients();
 const articles = new Articles();
 
 class Tickets {
-    async getLastCAE() {
+    async getLastCAE(data) {
         const afip = new Afip({ CUIT: ConstantesAfip.DatosEmpresa.CUIT });
         const puntoDeVenta = 1;
 
-        const ultimoIdCAE = await afip.ElectronicBilling.getLastVoucher(puntoDeVenta, ConstantesAfip.TiposComprobante.TIPO_FACTURA_A);
+        let tipoComprobanteAfip = 0;
+
+        console.log(data.comprobante);
+
+        if(data.comprobante == 'FACTURA A') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_FACTURA_A;
+        } else if(data.comprobante == 'FACTURA B') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_FACTURA_B;
+        } else if(data.comprobante == 'FACTURA C') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_FACTURA_C;
+        } else if(data.comprobante == 'NOTA DE CRÉDITO A') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_CREDITO_A;
+        } else if(data.comprobante == 'NOTA DE CRÉDITO B') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_CREDITO_B;
+        } else if(data.comprobante == 'NOTA DE CRÉDITO C') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_CREDITO_C;
+        } else if(data.comprobante == 'NOTA DE DÉBITO A') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_DEBITO_A;
+        } else if(data.comprobante == 'NOTA DE DÉBITO B') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_DEBITO_B;
+        } else if(data.comprobante == 'NOTA DE DÉBITO C') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_DEBITO_C;
+        }
+
+        const ultimoIdCAE = await afip.ElectronicBilling.getLastVoucher(puntoDeVenta, tipoComprobanteAfip);
 
         let datosRespuesta = {
             ultimoIdCAE: ultimoIdCAE

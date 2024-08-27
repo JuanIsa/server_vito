@@ -132,8 +132,6 @@ class Clients {
                 },
                 cuentaCorriente: client.currentAccount
             };
-
-            console.log(respuesta);
     
             return respuesta;
         } catch (error) {
