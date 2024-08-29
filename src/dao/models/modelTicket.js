@@ -33,6 +33,14 @@ const ticketSchema = new mongoose.Schema({
             type: Number,
             required: true
         },
+        numeroFactura: {
+            type: Number,
+            required: true
+        },
+        puntoVenta: {
+            type: Number,
+            required: true
+        },
         fechaFactura: Date,
         detallesFactura: [detalleFacturaSchema],
         cae: {

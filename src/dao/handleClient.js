@@ -115,7 +115,7 @@ class Clients {
                     location: 1, 
                     stateName: 1, 
                     cpNumber: 1, 
-                    cuitNumber: 1, 
+                    cuitNumber: 1,  
                     ivaType: 1, 
                     transportData: 1, 
                     contactData: 1, 

@@ -18,8 +18,6 @@ class Tickets {
 
         let tipoComprobanteAfip = 0;
 
-        console.log(data.comprobante);
-
         if(data.comprobante == 'FACTURA A') {
             tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_FACTURA_A;
         } else if(data.comprobante == 'FACTURA B') {
@@ -145,14 +143,19 @@ class Tickets {
         const res = await afip.ElectronicBilling.createVoucher(data);
 
         let ultimoIdFactura = await dataBase.findLastId(ticketModel) + 1;
+        let ultimoNumeroFactura = await this.obtenerUltimoNumeroFactura(tipoFactura) + 1;
+
+        console.log(ultimoNumeroFactura);
 
         return await ticketModel.create({
             active: true,
             id: ultimoIdFactura,
             idCliente: datosFactura.idCliente,
             idTipoFactura: tipoFactura,
+            puntoVenta: ConstantesAfip.DatosEmpresaVito.PUNTO_VENTA,
+            numeroFactura: ultimoNumeroFactura,
             tipoFactura: nombreTipoFactura,
-            fechaFactura: new Date(),
+            fechaFactura: datosFactura.fecha,
             descuento: datosFactura.descuento,
             observaciones: datosFactura.observaciones,
             cae: res.CAE,
@@ -176,10 +179,12 @@ class Tickets {
                 id: 0,
                 tipoConcepto: nombreTipoFactura,
                 idConcepto: ultimoIdFactura,
+                puntoVenta: ConstantesAfip.DatosEmpresaVito.PUNTO_VENTA,
+                numeroComprobante: ultimoNumeroFactura,
                 debe: (parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)) + parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) + parseFloat(importe_exento_iva.toFixed(2))).toFixed(2),
                 haber: 0.0,
                 observaciones: datosFactura.observaciones,
-                fecha: new Date()
+                fecha: datosFactura.fecha
             }
     
             datosCliente.currentAccount.push(datosCuentaCorriente);
@@ -187,6 +192,18 @@ class Tickets {
             return datosCliente.save();
         })
         .catch(e => e)
+    }
+
+    async obtenerUltimoNumeroFactura(tipoFactura) {
+        const facturas = await ticketModel.findOne({ idTipoFactura: tipoFactura }).sort({ id: -1 });
+
+        console.log(facturas);
+
+        if(facturas.numeroFactura) {
+            return facturas.numeroFactura;
+        }
+
+        return 0;
     }
 
     async getTickets(params) {
@@ -240,7 +257,7 @@ class Tickets {
                         detallesFactura: articulos,
                         fechaFactura: datosFactura.fechaFactura
                     }
-                    
+
                     return facturaActual;
                 }));
                 

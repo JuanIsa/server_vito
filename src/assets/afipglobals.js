@@ -3,6 +3,11 @@ const DatosEmpresa = {
     PUNTO_VENTA: 1
 }
 
+const DatosEmpresaVito = {
+    CUIT: 20933756549,
+    PUNTO_VENTA: 7
+}
+
 const TiposResponsable = {
     TIPO_RESP_IVA_RI: 1,
 	TIPO_RESP_IVA_RNI: 2,
@@ -90,6 +95,7 @@ const NumerosDocumento = {
   
 export default {
     DatosEmpresa,
+    DatosEmpresaVito, 
     TiposIVA,
     TiposConceptos,
     TiposComprobante,

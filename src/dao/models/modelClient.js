@@ -23,6 +23,14 @@ const currentAccountSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    numeroComprobante: {
+        type: Number,
+        required: true
+    },
+    puntoVenta: {
+        type: Number,
+        required: true
+    },
     debe: {
         type: Number,
         required: true
