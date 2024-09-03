@@ -143,19 +143,20 @@ class Tickets {
         const res = await afip.ElectronicBilling.createVoucher(data);
 
         let ultimoIdFactura = await dataBase.findLastId(ticketModel) + 1;
-        let ultimoNumeroFactura = await this.obtenerUltimoNumeroFactura(tipoFactura) + 1;
-
-        console.log(ultimoNumeroFactura);
+        let ultimoNumeroFactura = await this.obtenerUltimoNumeroFactura(tipoFactura, datosFactura.puntoVenta) + 1;
 
         return await ticketModel.create({
             active: true,
             id: ultimoIdFactura,
             idCliente: datosFactura.idCliente,
             idTipoFactura: tipoFactura,
-            puntoVenta: ConstantesAfip.DatosEmpresaVito.PUNTO_VENTA,
+            puntoVenta: datosFactura.puntoVenta,
             numeroFactura: ultimoNumeroFactura,
             tipoFactura: nombreTipoFactura,
             fechaFactura: datosFactura.fecha,
+            subtotalSinIva: parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)),
+            iva: parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)),
+            totalConIva: (parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)) + parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) + parseFloat(importe_exento_iva.toFixed(2))).toFixed(2),
             descuento: datosFactura.descuento,
             observaciones: datosFactura.observaciones,
             cae: res.CAE,
@@ -179,7 +180,7 @@ class Tickets {
                 id: 0,
                 tipoConcepto: nombreTipoFactura,
                 idConcepto: ultimoIdFactura,
-                puntoVenta: ConstantesAfip.DatosEmpresaVito.PUNTO_VENTA,
+                puntoVenta: datosFactura.puntoVenta,
                 numeroComprobante: ultimoNumeroFactura,
                 debe: (parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)) + parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) + parseFloat(importe_exento_iva.toFixed(2))).toFixed(2),
                 haber: 0.0,
@@ -194,10 +195,8 @@ class Tickets {
         .catch(e => e)
     }
 
-    async obtenerUltimoNumeroFactura(tipoFactura) {
-        const facturas = await ticketModel.findOne({ idTipoFactura: tipoFactura }).sort({ id: -1 });
-
-        console.log(facturas);
+    async obtenerUltimoNumeroFactura(tipoFactura, puntoVenta) {
+        const facturas = await ticketModel.findOne({ idTipoFactura: tipoFactura, puntoVenta: puntoVenta }).sort({ id: -1 });
 
         if(facturas.numeroFactura) {
             return facturas.numeroFactura;
@@ -244,6 +243,22 @@ class Tickets {
                     }));
 
                     montoFactura = montoFactura * (1 - datosFactura.descuento / 100);
+
+                    let subtotalSinIva = montoFactura;
+                    let importeIva = subtotalSinIva * 0.21;
+                    let totalConIva = subtotalSinIva + importeIva;
+
+                    if(datosFactura.subtotalSinIva) {
+                        subtotalSinIva = datosFactura.subtotalSinIva;
+                    }
+
+                    if(datosFactura.iva) {
+                        importeIva = datosFactura.iva;
+                    }
+
+                    if(datosFactura.totalConIva) {
+                        totalConIva = datosFactura.totalConIva;
+                    }
                     
                     let facturaActual = {
                         id: datosFactura.id,
@@ -255,7 +270,12 @@ class Tickets {
                         descuento: datosFactura.descuento,
                         cae: datosFactura.cae,
                         detallesFactura: articulos,
-                        fechaFactura: datosFactura.fechaFactura
+                        subtotalSinIva: subtotalSinIva,
+                        iva: importeIva,
+                        totalConIva: totalConIva,
+                        fechaFactura: datosFactura.fechaFactura,
+                        puntoVenta: datosFactura.puntoVenta,
+                        numeroFactura: datosFactura.numeroFactura
                     }
 
                     return facturaActual;

@@ -41,6 +41,18 @@ const ticketSchema = new mongoose.Schema({
             type: Number,
             required: true
         },
+        subtotalSinIva: {
+            type: Number,
+            required: true
+        },
+        iva: {
+            type: Number,
+            required: true
+        },
+        totalConIva: {
+            type: Number,
+            required: true
+        },
         fechaFactura: Date,
         detallesFactura: [detalleFacturaSchema],
         cae: {
