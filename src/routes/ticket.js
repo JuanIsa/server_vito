@@ -5,6 +5,7 @@ const ticketsRoute = Router();
 
 ticketsRoute.post('/getlastcae', TicketsController.getLastCAE);
 ticketsRoute.post('/generate', TicketsController.generateTicket);
+ticketsRoute.post('/generatecreditnote', TicketsController.generateCreditNote);
 ticketsRoute.post('/gettickets', TicketsController.getTickets);
 ticketsRoute.post('/getunpaidtickets', TicketsController.getUnpaidTickets);
 ticketsRoute.post('/generatepayment', TicketsController.createPayment);

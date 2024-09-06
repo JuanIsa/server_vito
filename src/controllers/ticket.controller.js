@@ -11,6 +11,10 @@ export const generateTicket = async (req, res) => {
     handleResponse(instanceOfTickets.generateTicket(req.body), res);
 };
 
+export const generateCreditNote = async (req, res) => {
+    handleResponse(instanceOfTickets.generateCreditNote(req.body), res);
+};
+
 export const getTickets = async (req, res) => {
     handleResponse(instanceOfTickets.getTickets(req.body), res);
 }
@@ -30,6 +34,7 @@ export const getPayments = async (req, res) => {
 export default {
     getLastCAE,
     generateTicket,
+    generateCreditNote,
     getTickets,
     getUnpaidTickets,
     createPayment,

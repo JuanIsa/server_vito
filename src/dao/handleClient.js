@@ -123,6 +123,10 @@ class Clients {
                 }
             ).exec();
 
+            if (client && client.currentAccount) {
+                client.currentAccount.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+            }
+
             const respuesta = {
                 datosCliente: {
                     nombre: client.clientName,

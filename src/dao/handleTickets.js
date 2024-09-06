@@ -55,7 +55,7 @@ class Tickets {
         let tipoFactura = ConstantesAfip.TiposComprobante.TIPO_FACTURA_A;
         let nombreTipoFactura = 'FACTURA A';
         let tipoIdentificacion = ConstantesAfip.TiposDocumento.TIPO_DOC_CUIT;
-        let numeroIdentificacion = 33693450239;
+        let numeroIdentificacion = datosCliente.cuitNumber;
 
         if(datosCliente.ivaType == 'EXENTO' || datosCliente.ivaType == 'CONSUMIDOR FINAL') {
             tipoFactura = ConstantesAfip.TiposComprobante.TIPO_FACTURA_B;
@@ -113,7 +113,7 @@ class Tickets {
 
         const data = {
             'CantReg' 	    : 1, 
-            'PtoVta' 	    : ConstantesAfip.DatosEmpresa.PUNTO_VENTA,
+            'PtoVta' 	    : datosFactura.puntoVenta,
             'CbteTipo' 	    : tipoFactura, 
             'Concepto' 	    : concepto,
             'DocTipo' 	    : tipoIdentificacion,
@@ -201,6 +201,16 @@ class Tickets {
 
         if(facturas.numeroFactura) {
             return facturas.numeroFactura;
+        }
+
+        return 0;
+    }
+
+    async obtenerUltimoNumeroNotaCredito(tipoNotaCredito, puntoVenta) {
+        const notaCredito = await creditNoteModel.findOne({ idTipoNotaCredito: tipoNotaCredito, puntoVenta: puntoVenta }).sort({ id: -1 });
+
+        if(notaCredito && notaCredito.numeroNotaCredito) {
+            return notaCredito.numeroNotaCredito;
         }
 
         return 0;
@@ -312,6 +322,24 @@ class Tickets {
                     }));
 
                     montoFactura = montoFactura * (1 - datosFactura.descuento / 100);
+
+
+                    let subtotalSinIva = montoFactura;
+                    let importeIva = subtotalSinIva * 0.21;
+
+                    if(datosFactura.subtotalSinIva) {
+                        subtotalSinIva = datosFactura.subtotalSinIva;
+                    }
+
+                    if(datosFactura.iva) {
+                        importeIva = datosFactura.iva;
+                    }
+
+                    if(datosFactura.totalConIva) {
+                        montoFactura = datosFactura.totalConIva;
+                    } else {
+                        montoFactura = subtotalSinIva + importeIva;
+                    }
 
                     montoFactura -= await this.obtenerMontoTotalPagadoComprobante(datosFactura.id);
                     
@@ -472,12 +500,12 @@ class Tickets {
 
     async generateCreditNote(datosNotaCredito) {
         const afip = new Afip({ CUIT: ConstantesAfip.DatosEmpresa.CUIT });
-        let datosCliente = await clients.getClient({id: datosFactura.idCliente});
+        let datosCliente = await clients.getClient({id: datosNotaCredito.idCliente});
         const fechaNotaCredito = new Date(Date.now() - ((new Date()).getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         let tipoNotaCredito = ConstantesAfip.TiposComprobante.TIPO_NOTA_CREDITO_A;
         let nombreTipoNotaCredito = 'NOTA DE CRÉDITO A';
         let tipoIdentificacion = ConstantesAfip.TiposDocumento.TIPO_DOC_CUIT;
-        let numeroIdentificacion = 33693450239;
+        let numeroIdentificacion = datosCliente.cuitNumber;
 
         if(datosCliente.ivaType == 'EXENTO' || datosCliente.ivaType == 'CONSUMIDOR FINAL') {
             tipoNotaCredito = ConstantesAfip.TiposComprobante.TIPO_NOTA_CREDITO_B;
@@ -489,74 +517,77 @@ class Tickets {
                 numeroIdentificacion = ConstantesAfip.NumerosDocumento.NUMERO_DOCUMENTO_CONSUMIDOR_FINAL;
             }
         }
-
-        /**
-         * Importe exento al IVA
-         **/
-        const importe_exento_iva = 0;
         
         let fechaServicioDesde = null, fechaServicioHasta = null, fechaVencimientoPago = null;
-        
-        if (concepto === ConstantesAfip.TiposConceptos.CONCEPTO_SERVICIOS || concepto === ConstantesAfip.TiposConceptos.CONCEPTO_AMBOS) {
-            fechaServicioDesde = parseInt(FuncionesComunes.getDateAMD());
-            fechaServicioHasta = parseInt(FuncionesComunes.getDateAMD());
-            fechaVencimientoPago = parseInt(FuncionesComunes.getDateAMD()); // Corroborar fecha vencimiento pago, cuántos días son?
-        }
 
-        console.log(datosNotaCredito);
-/*
+        let importeIva = 0.0;
+        let detallesIva = [];
+        let comprobantesAsociados = [];
+
+        datosNotaCredito.itemsNotaCredito.forEach(itemNotaCredito => {
+            let ivaItem = itemNotaCredito.importe * itemNotaCredito.iva / 100;
+            importeIva += ivaItem;
+
+            detallesIva.push({
+                'Id' 		: this.tipoIvaSegunPorcentaje(itemNotaCredito.iva),
+                'BaseImp' 	: itemNotaCredito.importe,
+                'Importe' 	: ivaItem
+            });
+        });
+
+        datosNotaCredito.comprobantesAsociados.forEach(comprobanteAsociado => {
+            comprobantesAsociados.push({
+                'Tipo' 		: ConstantesAfip.TiposComprobante.TIPO_FACTURA_A,
+                'PtoVta' 	: comprobanteAsociado.puntoVenta,
+                'Nro' 		: comprobanteAsociado.numeroComprobante
+            });
+        });
+
         const data = {
             'CantReg' 	    : 1, 
-            'PtoVta' 	    : ConstantesAfip.DatosEmpresa.PUNTO_VENTA,
-            'CbteTipo' 	    : tipoFactura, 
-            'Concepto' 	    : concepto,
+            'PtoVta' 	    : datosNotaCredito.puntoVenta,
+            'CbteTipo' 	    : tipoNotaCredito, 
+            'Concepto' 	    : ConstantesAfip.TiposConceptos.CONCEPTO_PRODUCTOS,
             'DocTipo' 	    : tipoIdentificacion,
             'DocNro' 	    : numeroIdentificacion,
-            'CbteDesde'     : datosFactura.cae,
-            'CbteHasta'     : datosFactura.cae,
+            'CbteDesde'     : datosNotaCredito.cae,
+            'CbteHasta'     : datosNotaCredito.cae,
             'CbteFch' 	    : parseInt(fechaNotaCredito.replace(/-/g, '')),	
             'FchServDesde'  : fechaServicioDesde,
             'FchServHasta'  : fechaServicioHasta,
             'FchVtoPago'    : fechaVencimientoPago,
-            'ImpTotal' 	    : (parseFloat(datosNotaCredito.resultadoFactura.subtotalDescuento.toFixed(2)) + parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) + parseFloat(importe_exento_iva.toFixed(2))).toFixed(2),
+            'ImpTotal' 	    : parseFloat(datosNotaCredito.resultadoFactura.subtotal.toFixed(2)),
             'ImpTotConc'    : 0, // Importe neto no gravado
-            'ImpNeto' 	    : parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)),
-            'ImpOpEx' 	    : importe_exento_iva,
-            'ImpIVA' 	    : parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)),
+            'ImpNeto' 	    : parseFloat(parseFloat(datosNotaCredito.resultadoFactura.subtotal.toFixed(2)) - parseFloat(importeIva).toFixed(2)).toFixed(2),
+            'ImpOpEx' 	    : 0.0,
+            'ImpIVA' 	    : importeIva,
             'ImpTrib' 	    : 0, //Importe total de tributos
             'MonId' 	    : ConstantesAfip.TiposMoneda.TIPO_MONEDA_PESO,
             'MonCotiz' 	    : ConstantesAfip.IdTiposMoneda.TIPO_MONEDA_PESO,   
-            'Iva' 		    : [ // Alícuotas asociadas a la factura
-                {
-                    'Id' 		: 5, // Id del tipo de IVA (5 = 21%)
-                    'BaseImp' 	: parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)),
-                    'Importe' 	: parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) 
-                }
-            ]
+            'Iva' 		    : detallesIva,
+            'CbtesAsoc'     : comprobantesAsociados,
         };
 
         const res = await afip.ElectronicBilling.createVoucher(data);
 
-        let ultimoIdFactura = await dataBase.findLastId(ticketModel) + 1;
-        let ultimoNumeroFactura = await this.obtenerUltimoNumeroFactura(tipoFactura, datosFactura.puntoVenta) + 1;
+        let ultimoIdNotaCredito = await dataBase.findLastId(creditNoteModel) + 1;
+        let ultimoNumeroNotaCredito = await this.obtenerUltimoNumeroNotaCredito(tipoNotaCredito, datosNotaCredito.puntoVenta) + 1;
 
-        return await ticketModel.create({
+        return await creditNoteModel.create({
             active: true,
-            id: ultimoIdFactura,
-            idCliente: datosFactura.idCliente,
-            idTipoFactura: tipoFactura,
-            puntoVenta: datosFactura.puntoVenta,
-            numeroFactura: ultimoNumeroFactura,
-            tipoFactura: nombreTipoFactura,
-            fechaFactura: datosFactura.fecha,
-            subtotalSinIva: parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)),
-            iva: parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)),
-            totalConIva: (parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)) + parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) + parseFloat(importe_exento_iva.toFixed(2))).toFixed(2),
-            descuento: datosFactura.descuento,
-            observaciones: datosFactura.observaciones,
+            id: ultimoIdNotaCredito,
+            idCliente: datosNotaCredito.idCliente,
+            idTipoNotaCredito: tipoNotaCredito,
+            puntoVenta: datosNotaCredito.puntoVenta,
+            numeroNotaCredito: ultimoNumeroNotaCredito,
+            tipoNotaCredito: nombreTipoNotaCredito,
+            fechaNotaCredito: datosNotaCredito.fecha,
+            observaciones: datosNotaCredito.observaciones,
+            importe: datosNotaCredito.resultadoFactura.subtotal,
             cae: res.CAE,
             vencimientoCae: res.CAEFchVto,
-            detallesFactura: articulosFacturados,            
+            detallesNotaCredito: datosNotaCredito.itemsNotaCredito,
+            comprobantesAsociados: datosNotaCredito.comprobantesAsociados,
             creationData: {
                 date: FuncionesComunes.getDate(),
                 responsible:"root"
@@ -573,21 +604,37 @@ class Tickets {
         .then(() => {
             let datosCuentaCorriente = {
                 id: 0,
-                tipoConcepto: nombreTipoFactura,
-                idConcepto: ultimoIdFactura,
-                puntoVenta: datosFactura.puntoVenta,
-                numeroComprobante: ultimoNumeroFactura,
-                debe: (parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)) + parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) + parseFloat(importe_exento_iva.toFixed(2))).toFixed(2),
-                haber: 0.0,
-                observaciones: datosFactura.observaciones,
-                fecha: datosFactura.fecha
+                tipoConcepto: nombreTipoNotaCredito,
+                idConcepto: ultimoIdNotaCredito,
+                puntoVenta: datosNotaCredito.puntoVenta,
+                numeroComprobante: ultimoNumeroNotaCredito,
+                debe: 0.0,
+                haber: parseFloat(datosNotaCredito.resultadoFactura.subtotal.toFixed(2)),
+                observaciones: datosNotaCredito.observaciones,
+                fecha: datosNotaCredito.fecha
             }
     
             datosCliente.currentAccount.push(datosCuentaCorriente);
     
             return datosCliente.save();
         })
-        .catch(e => e)*/
+        .catch(e => e)
+    }
+
+    tipoIvaSegunPorcentaje(porcentaje) {
+        if(porcentaje == 0) {
+            return ConstantesAfip.TiposIVA.IVA_0; ;
+        } else if(porcentaje == 10.5) {
+            return ConstantesAfip.TiposIVA.IVA_10_5;
+        } else if(porcentaje == 21) {
+            return ConstantesAfip.TiposIVA.IVA_21;
+        } else if(porcentaje == 27) {
+            return ConstantesAfip.TiposIVA.IVA_27;
+        } else if(porcentaje == 5) {
+            return ConstantesAfip.TiposIVA.IVA_5;
+        } else if(porcentaje == 2.5) {
+            return ConstantesAfip.TiposIVA.IVA_2_5;
+        }
     }
 }
 export default Tickets;

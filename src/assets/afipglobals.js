@@ -1,11 +1,5 @@
 const DatosEmpresa = {
-    CUIT: 20409378472,
-    PUNTO_VENTA: 1
-}
-
-const DatosEmpresaVito = {
-    CUIT: 20933756549,
-    PUNTO_VENTA: 7
+    CUIT: 20933756549
 }
 
 const TiposResponsable = {
@@ -95,7 +89,6 @@ const NumerosDocumento = {
   
 export default {
     DatosEmpresa,
-    DatosEmpresaVito, 
     TiposIVA,
     TiposConceptos,
     TiposComprobante,

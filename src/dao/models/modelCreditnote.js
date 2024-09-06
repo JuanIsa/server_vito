@@ -8,6 +8,21 @@ const detalleNotaCreditoSchema = new mongoose.Schema({
     iva: Number
 });
 
+const comprobantesAsociadosSchema = new mongoose.Schema({
+    tipoComprobante: {
+        type: String,
+        required: true
+    },
+    numeroComprobante: {
+        type: Number,
+        required: true
+    },
+    puntoVenta: {
+        type: Number,
+        required: true
+    }
+});
+
 const creditNoteSchema = new mongoose.Schema({
         active: Boolean,
         id: {
@@ -31,8 +46,21 @@ const creditNoteSchema = new mongoose.Schema({
             type: Number,
             required: true
         },
+        numeroNotaCredito: {
+            type: Number,
+            required: true
+        },
+        puntoVenta: {
+            type: Number,
+            required: true
+        },
+        importe: {
+            type: Number,
+            required: true
+        },
         fechaNotaCredito: Date,
         detallesNotaCredito: [detalleNotaCreditoSchema],
+        comprobantesAsociados: [comprobantesAsociadosSchema],
         cae: {
             type: String,
             required: true
