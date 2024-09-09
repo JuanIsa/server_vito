@@ -323,7 +323,6 @@ class Tickets {
 
                     montoFactura = montoFactura * (1 - datosFactura.descuento / 100);
 
-
                     let subtotalSinIva = montoFactura;
                     let importeIva = subtotalSinIva * 0.21;
 
@@ -342,6 +341,15 @@ class Tickets {
                     }
 
                     montoFactura -= await this.obtenerMontoTotalPagadoComprobante(datosFactura.id);
+
+                    if(montoFactura < 0.01) {
+                        await ticketModel.updateOne(
+                            { id: datosFactura.id }, 
+                            { $set: { pagado: true } } 
+                        );
+
+                        return;
+                    }
                     
                     let facturaActual = {
                         id: datosFactura.id,
@@ -351,7 +359,9 @@ class Tickets {
                         observaciones: datosFactura.observaciones,
                         tipoFactura: datosFactura.tipoFactura,
                         cae: datosFactura.cae,
-                        fechaFactura: datosFactura.fechaFactura
+                        fechaFactura: datosFactura.fechaFactura,
+                        puntoVenta: datosFactura.puntoVenta,
+                        numeroFactura: datosFactura.numeroFactura
                     }
 
                     return facturaActual;
@@ -367,7 +377,7 @@ class Tickets {
         let datosCliente = await clients.getClientId(params.cliente);
 
         if(params.idPago == 0) {
-            await paymentsModel.create({
+            return await paymentsModel.create({
                 active: true,
                 id: ultimoIdPago,
                 idCliente: datosCliente.id,
@@ -389,24 +399,26 @@ class Tickets {
                     responsible:""
                 }
             })
-            .then(data => {
-                let datosCuentaCorriente = {
-                    id: 0,
-                    tipoConcepto: 'PAGO FACTURA',
-                    idConcepto: ultimoIdPago,
-                    debe: 0.0,
-                    haber: params.totalAPagar,
-                    observaciones: '',
-                    fecha: new Date()
-                }
-    
-                datosCliente.currentAccount.push(datosCuentaCorriente);
-
-                datosCliente.save();
-
+            .then(data => {                
                 params.comprobantes.forEach(async comprobanteActual => {
+                    let datosCuentaCorriente = {
+                        id: 0,
+                        tipoConcepto: 'PAGO FACTURA',
+                        idConcepto: ultimoIdPago,
+                        debe: 0.0,
+                        haber: params.totalAPagar,
+                        observaciones: '',
+                        fecha: new Date(),
+                        puntoVenta: comprobanteActual.puntoVenta,
+                        numeroComprobante: comprobanteActual.numeroFactura
+                    }
+        
+                    datosCliente.currentAccount.push(datosCuentaCorriente);
+
                     await this.actualizarTotalPagadoComprobante(comprobanteActual.numeroComprobante);
                 })
+                
+                datosCliente.save();
 
                 return data;
             })
@@ -441,8 +453,24 @@ class Tickets {
         });
 
         const totalConDescuento = totalAntesDescuento * (1 - factura.descuento / 100);
+        
+        let subtotalSinIva = totalConDescuento;
+        let importeIva = subtotalSinIva * 0.21;
+        let totalConIva = subtotalSinIva + importeIva;
 
-        const totalFactura = Math.max(totalConDescuento, 0);
+        if(factura.subtotalSinIva) {
+            subtotalSinIva = datosFactura.subtotalSinIva;
+        }
+
+        if(factura.iva) {
+            importeIva = datosFactura.iva;
+        }
+
+        if(factura.totalConIva) {
+            totalConIva = datosFactura.totalConIva;
+        }
+
+        const totalFactura = Math.max(totalConIva, 0);
 
         let pagado = false;
 

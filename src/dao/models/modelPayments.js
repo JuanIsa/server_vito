@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 const collection = 'payments';
 
 const comprobantesSchema = new mongoose.Schema({
+    numeroFactura: Number,
+    puntoVenta: Number,
     numeroComprobante: Number,
     montoAPagar: Number,
     tipoFactura: String
@@ -17,6 +19,7 @@ const retencionSchema = new mongoose.Schema({
 });
 
 const pagosSchema = new mongoose.Schema({
+    esTransferencia: Boolean,
     numeroCheque: Number,
     banco: String,
     importe: Number,
