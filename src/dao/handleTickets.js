@@ -341,16 +341,8 @@ class Tickets {
                     }
 
                     montoFactura -= await this.obtenerMontoTotalPagadoComprobante(datosFactura.id);
+                    montoFactura -= await this.obtenerMontoTotalNotasCreditoComprobante(datosFactura.puntoVenta, datosFactura.numeroFactura);
 
-                    if(montoFactura < 0.01) {
-                        await ticketModel.updateOne(
-                            { id: datosFactura.id }, 
-                            { $set: { pagado: true } } 
-                        );
-
-                        return;
-                    }
-                    
                     let facturaActual = {
                         id: datosFactura.id,
                         idCliente: datosFactura.idCliente,
@@ -406,7 +398,7 @@ class Tickets {
                         tipoConcepto: 'PAGO FACTURA',
                         idConcepto: ultimoIdPago,
                         debe: 0.0,
-                        haber: params.totalAPagar,
+                        haber: comprobanteActual.montoAPagar,
                         observaciones: '',
                         fecha: new Date(),
                         puntoVenta: comprobanteActual.puntoVenta,
@@ -441,16 +433,30 @@ class Tickets {
         return pagos.length > 0 ? pagos[0].totalPagado : 0;
     }
 
+    async obtenerMontoTotalNotasCreditoComprobante(puntoVenta, numeroComprobante) {
+        const notasCredito = await creditNoteModel.aggregate([
+            { $match: { "comprobantesAsociados.puntoVenta": puntoVenta, "comprobantesAsociados.numeroComprobante": numeroComprobante } },
+            { $group: {
+                _id: null,
+                totalNotasCredito: { $sum: "$importe" }
+            }}
+        ]);
+
+        return notasCredito.length > 0 ? notasCredito[0].totalNotasCredito : 0;
+    }
+
     async actualizarTotalPagadoComprobante(numeroComprobante) {
-        const totalPagadoFactura = await this.obtenerMontoTotalPagadoComprobante(numeroComprobante);
-
         const factura = await ticketModel.findOne({ id: numeroComprobante }).exec();
-
+        
         let totalAntesDescuento = 0;
         factura.detallesFactura.forEach(detalle => {
             const subtotalArticulo = detalle.cantidad * detalle.precioUnitario;
             totalAntesDescuento += subtotalArticulo - detalle.descuento;
         });
+        
+        
+        const totalPagadoFactura = await this.obtenerMontoTotalPagadoComprobante(numeroComprobante);
+        const totalNotasCreditoFactura = await this.obtenerMontoTotalNotasCreditoComprobante(factura.puntoVenta, factura.numeroFactura);
 
         const totalConDescuento = totalAntesDescuento * (1 - factura.descuento / 100);
         
@@ -459,23 +465,23 @@ class Tickets {
         let totalConIva = subtotalSinIva + importeIva;
 
         if(factura.subtotalSinIva) {
-            subtotalSinIva = datosFactura.subtotalSinIva;
+            subtotalSinIva = factura.subtotalSinIva;
         }
 
         if(factura.iva) {
-            importeIva = datosFactura.iva;
+            importeIva = factura.iva;
         }
 
         if(factura.totalConIva) {
-            totalConIva = datosFactura.totalConIva;
+            totalConIva = factura.totalConIva;
         }
 
         const totalFactura = Math.max(totalConIva, 0);
 
         let pagado = false;
 
-        if(totalFactura == totalPagadoFactura) {
-            pagado = true;
+        if(Math.abs(totalFactura - totalPagadoFactura - totalNotasCreditoFactura) < 0.01 ) {
+            pagado = true; 
         }
 
         return await ticketModel.updateOne(
