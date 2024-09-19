@@ -1,5 +1,6 @@
 const DatosEmpresa = {
-    CUIT: 20933756549
+    CUIT: 20933756549,
+    PUNTO_VENTA_FACTURA_ELECTRONICA: 8
 }
 
 const TiposResponsable = {

@@ -7,16 +7,29 @@ import Articles from './handleArticles.js';
 import ticketModel from './models/modelTicket.js';
 import paymentsModel from './models/modelPayments.js';
 import creditNoteModel from './models/modelCreditNote.js';
+import fs from 'fs';
+import facturajs from 'facturajs';
+
+const { AfipServices } = facturajs;
 
 const dataBase = new DataBase();
 const clients = new Clients();
 const articles = new Articles();
 
+
+const afip = new AfipServices({
+    certContents: fs.readFileSync('./certificados/certificado.crt').toString('utf8'),
+    privateKeyContents: fs
+        .readFileSync('./certificados/key')
+        .toString('utf8'),
+    cacheTokensPath: './.lastTokens',
+    homo: false,
+    tokensExpireInHours: 12,
+});
+
+
 class Tickets {
     async getLastCAE(data) {
-        const afip = new Afip({ CUIT: ConstantesAfip.DatosEmpresa.CUIT });
-        const puntoDeVenta = 1;
-
         let tipoComprobanteAfip = 0;
 
         if(data.comprobante == 'FACTURA A') {
@@ -39,19 +52,29 @@ class Tickets {
             tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_DEBITO_C;
         }
 
-        const ultimoIdCAE = await afip.ElectronicBilling.getLastVoucher(puntoDeVenta, tipoComprobanteAfip);
-
         let datosRespuesta = {
-            ultimoIdCAE: ultimoIdCAE
+            ultimoIdCAE: 0
+        }
+
+        try {
+            const res = await afip.getLastBillNumber({
+                Auth: { Cuit: ConstantesAfip.DatosEmpresa.CUIT },
+                params: {
+                    CbteTipo: tipoComprobanteAfip,
+                    PtoVta: data.puntoVenta,
+                },
+            });
+
+            datosRespuesta.ultimoIdCAE = res.CbteNro;
+        } catch(e) {
+            throw e;
         }
 
         return datosRespuesta;
     }
 
     async generateTicket(datosFactura) {
-        const afip = new Afip({ CUIT: ConstantesAfip.DatosEmpresa.CUIT });
         let datosCliente = await clients.getClient({id: datosFactura.idCliente});
-        const fechaFactura = new Date(Date.now() - ((new Date()).getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         let tipoFactura = ConstantesAfip.TiposComprobante.TIPO_FACTURA_A;
         let nombreTipoFactura = 'FACTURA A';
         let tipoIdentificacion = ConstantesAfip.TiposDocumento.TIPO_DOC_CUIT;
@@ -111,37 +134,45 @@ class Tickets {
             fechaVencimientoPago = parseInt(FuncionesComunes.getDateAMD()); // Corroborar fecha vencimiento pago, cuántos días son?
         }
 
-        const data = {
-            'CantReg' 	    : 1, 
-            'PtoVta' 	    : datosFactura.puntoVenta,
-            'CbteTipo' 	    : tipoFactura, 
-            'Concepto' 	    : concepto,
-            'DocTipo' 	    : tipoIdentificacion,
-            'DocNro' 	    : numeroIdentificacion,
-            'CbteDesde'     : datosFactura.cae,
-            'CbteHasta'     : datosFactura.cae,
-            'CbteFch' 	    : parseInt(fechaFactura.replace(/-/g, '')),	
-            'FchServDesde'  : fechaServicioDesde,
-            'FchServHasta'  : fechaServicioHasta,
-            'FchVtoPago'    : fechaVencimientoPago,
-            'ImpTotal' 	    : (parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)) + parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) + parseFloat(importe_exento_iva.toFixed(2))).toFixed(2),
-            'ImpTotConc'    : 0, // Importe neto no gravado
-            'ImpNeto' 	    : parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)),
-            'ImpOpEx' 	    : importe_exento_iva,
-            'ImpIVA' 	    : parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)),
-            'ImpTrib' 	    : 0, //Importe total de tributos
-            'MonId' 	    : ConstantesAfip.TiposMoneda.TIPO_MONEDA_PESO,
-            'MonCotiz' 	    : ConstantesAfip.IdTiposMoneda.TIPO_MONEDA_PESO,   
-            'Iva' 		    : [ // Alícuotas asociadas a la factura
-                {
-                    'Id' 		: 5, // Id del tipo de IVA (5 = 21%)
-                    'BaseImp' 	: parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)),
-                    'Importe' 	: parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) 
-                }
-            ]
-        };
-
-        const res = await afip.ElectronicBilling.createVoucher(data);
+        const res = await afip.createBill({
+            Auth: { Cuit: ConstantesAfip.DatosEmpresa.CUIT },
+            params: {
+                FeCAEReq: {
+                    FeCabReq: {
+                        CantReg: 1,
+                        PtoVta: datosFactura.puntoVenta,
+                        CbteTipo: tipoFactura,
+                    },
+                    FeDetReq: {
+                        FECAEDetRequest: {
+                            DocTipo: tipoIdentificacion,
+                            DocNro: numeroIdentificacion,
+                            Concepto: concepto,
+                            CbteDesde: datosFactura.cae,
+                            CbteHasta: datosFactura.cae,
+                            CbteFch: moment().format('YYYYMMDD'),
+                            ImpTotal: (parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)) + parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) + parseFloat(importe_exento_iva.toFixed(2))).toFixed(2),
+                            ImpTotConc: 0,
+                            ImpNeto: parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)),
+                            ImpOpEx: importe_exento_iva,
+                            ImpIVA: parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)),
+                            ImpTrib: 0,
+                            MonId: ConstantesAfip.TiposMoneda.TIPO_MONEDA_PESO,
+                            MonCotiz: ConstantesAfip.IdTiposMoneda.TIPO_MONEDA_PESO,
+                            Iva: [
+                                {
+                                    AlicIva: {
+                                        'Id' 		: 5, // Id del tipo de IVA (5 = 21%)
+                                        'BaseImp' 	: parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)),
+                                        'Importe' 	: parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) 
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                },
+            },
+        });
 
         let ultimoIdFactura = await dataBase.findLastId(ticketModel) + 1;
         let ultimoNumeroFactura = await this.obtenerUltimoNumeroFactura(tipoFactura, datosFactura.puntoVenta) + 1;
