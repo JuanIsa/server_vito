@@ -1,6 +1,5 @@
 import FuncionesComunes from './handleCommonFunctions.js'
 import DataBase from './handleDataBase.js';
-import Afip from '@afipsdk/afip.js';
 import ConstantesAfip from '../assets/afipglobals.js';
 import Clients from './handleClient.js';
 import Articles from './handleArticles.js';

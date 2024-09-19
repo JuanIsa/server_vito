@@ -2,7 +2,6 @@ import clientModel from './models/modelClient.js';
 import FuncionesComunes from './handleCommonFunctions.js';
 import DataBase from './handleDataBase.js';
 import Administracion from './handleAdministration.js';
-import Afip from '@afipsdk/afip.js';
 import ConstantesAfip from '../assets/afipglobals.js';
 
 const dataBase = new DataBase();
