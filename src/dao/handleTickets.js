@@ -55,18 +55,22 @@ class Tickets {
             ultimoIdCAE: 0
         }
 
-        try {
-            const res = await afip.getLastBillNumber({
-                Auth: { Cuit: ConstantesAfip.DatosEmpresa.CUIT },
-                params: {
-                    CbteTipo: tipoComprobanteAfip,
-                    PtoVta: data.puntoVenta,
-                },
-            });
+        if(data.puntoVenta == ConstantesAfip.DatosEmpresa.PUNTO_VENTA_FACTURA_ELECTRONICA) {
+            try {
+                const res = await afip.getLastBillNumber({
+                    Auth: { Cuit: ConstantesAfip.DatosEmpresa.CUIT },
+                    params: {
+                        CbteTipo: tipoComprobanteAfip,
+                        PtoVta: data.puntoVenta,
+                    },
+                });
 
-            datosRespuesta.ultimoIdCAE = res.CbteNro;
-        } catch(e) {
-            throw e;
+                datosRespuesta.ultimoIdCAE = res.CbteNro;
+            } catch(e) {
+                throw e;
+            }
+        } else {
+            datosRespuesta.ultimoIdCAE = await this.obtenerUltimoNumeroFactura(tipoComprobanteAfip, data.puntoVenta);
         }
 
         return datosRespuesta;
@@ -133,45 +137,54 @@ class Tickets {
             fechaVencimientoPago = parseInt(FuncionesComunes.getDateAMD()); // Corroborar fecha vencimiento pago, cuántos días son?
         }
 
-        const res = await afip.createBill({
-            Auth: { Cuit: ConstantesAfip.DatosEmpresa.CUIT },
-            params: {
-                FeCAEReq: {
-                    FeCabReq: {
-                        CantReg: 1,
-                        PtoVta: datosFactura.puntoVenta,
-                        CbteTipo: tipoFactura,
-                    },
-                    FeDetReq: {
-                        FECAEDetRequest: {
-                            DocTipo: tipoIdentificacion,
-                            DocNro: numeroIdentificacion,
-                            Concepto: concepto,
-                            CbteDesde: datosFactura.cae,
-                            CbteHasta: datosFactura.cae,
-                            CbteFch: moment().format('YYYYMMDD'),
-                            ImpTotal: (parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)) + parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) + parseFloat(importe_exento_iva.toFixed(2))).toFixed(2),
-                            ImpTotConc: 0,
-                            ImpNeto: parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)),
-                            ImpOpEx: importe_exento_iva,
-                            ImpIVA: parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)),
-                            ImpTrib: 0,
-                            MonId: ConstantesAfip.TiposMoneda.TIPO_MONEDA_PESO,
-                            MonCotiz: ConstantesAfip.IdTiposMoneda.TIPO_MONEDA_PESO,
-                            Iva: [
-                                {
-                                    AlicIva: {
-                                        'Id' 		: 5, // Id del tipo de IVA (5 = 21%)
-                                        'BaseImp' 	: parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)),
-                                        'Importe' 	: parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) 
+        let res = null;
+
+        if(datosFactura.puntoVenta == ConstantesAfip.DatosEmpresa.PUNTO_VENTA_FACTURA_ELECTRONICA) {
+            res = await afip.createBill({
+                Auth: { Cuit: ConstantesAfip.DatosEmpresa.CUIT },
+                params: {
+                    FeCAEReq: {
+                        FeCabReq: {
+                            CantReg: 1,
+                            PtoVta: datosFactura.puntoVenta,
+                            CbteTipo: tipoFactura,
+                        },
+                        FeDetReq: {
+                            FECAEDetRequest: {
+                                DocTipo: tipoIdentificacion,
+                                DocNro: numeroIdentificacion,
+                                Concepto: concepto,
+                                CbteDesde: datosFactura.cae,
+                                CbteHasta: datosFactura.cae,
+                                CbteFch: moment().format('YYYYMMDD'),
+                                ImpTotal: (parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)) + parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) + parseFloat(importe_exento_iva.toFixed(2))).toFixed(2),
+                                ImpTotConc: 0,
+                                ImpNeto: parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)),
+                                ImpOpEx: importe_exento_iva,
+                                ImpIVA: parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)),
+                                ImpTrib: 0,
+                                MonId: ConstantesAfip.TiposMoneda.TIPO_MONEDA_PESO,
+                                MonCotiz: ConstantesAfip.IdTiposMoneda.TIPO_MONEDA_PESO,
+                                Iva: [
+                                    {
+                                        AlicIva: {
+                                            'Id' 		: 5, // Id del tipo de IVA (5 = 21%)
+                                            'BaseImp' 	: parseFloat(datosFactura.resultadoFactura.subtotalDescuento.toFixed(2)),
+                                            'Importe' 	: parseFloat(datosFactura.resultadoFactura.IVA.toFixed(2)) 
+                                        },
                                     },
-                                },
-                            ],
+                                ],
+                            },
                         },
                     },
                 },
-            },
-        });
+            });
+        } else {
+            res = {
+                CAE: '0',
+                CAEFchVto: new Date()
+            }
+        }
 
         let ultimoIdFactura = await dataBase.findLastId(ticketModel) + 1;
         let ultimoNumeroFactura = await this.obtenerUltimoNumeroFactura(tipoFactura, datosFactura.puntoVenta) + 1;
@@ -227,7 +240,7 @@ class Tickets {
     }
 
     async obtenerUltimoNumeroFactura(tipoFactura, puntoVenta) {
-        const facturas = await ticketModel.findOne({ idTipoFactura: tipoFactura, puntoVenta: puntoVenta }).sort({ id: -1 });
+        const facturas = await ticketModel.findOne({ idTipoFactura: tipoFactura, puntoVenta: puntoVenta }).sort({ numeroFactura: -1 });
 
         if(facturas.numeroFactura) {
             return facturas.numeroFactura;
