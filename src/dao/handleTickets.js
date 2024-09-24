@@ -30,6 +30,7 @@ const afip = new AfipServices({
 class Tickets {
     async getLastCAE(data) {
         let tipoComprobanteAfip = 0;
+        let tipoComprobante = 'FACTURA';
 
         if(data.comprobante == 'FACTURA A') {
             tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_FACTURA_A;
@@ -39,16 +40,22 @@ class Tickets {
             tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_FACTURA_C;
         } else if(data.comprobante == 'NOTA DE CRÉDITO A') {
             tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_CREDITO_A;
+            tipoComprobante = 'NOTA CREDITO';
         } else if(data.comprobante == 'NOTA DE CRÉDITO B') {
             tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_CREDITO_B;
+            tipoComprobante = 'NOTA CREDITO';
         } else if(data.comprobante == 'NOTA DE CRÉDITO C') {
             tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_CREDITO_C;
+            tipoComprobante = 'NOTA CREDITO';
         } else if(data.comprobante == 'NOTA DE DÉBITO A') {
             tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_DEBITO_A;
+            tipoComprobante = 'NOTA DEBITO';
         } else if(data.comprobante == 'NOTA DE DÉBITO B') {
             tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_DEBITO_B;
+            tipoComprobante = 'NOTA DEBITO';
         } else if(data.comprobante == 'NOTA DE DÉBITO C') {
             tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_DEBITO_C;
+            tipoComprobante = 'NOTA DEBITO';
         }
 
         let datosRespuesta = {
@@ -69,8 +76,12 @@ class Tickets {
             } catch(e) {
                 throw e;
             }
-        } else {
+        } else if(tipoComprobante == 'FACTURA') {
             datosRespuesta.ultimoIdCAE = await this.obtenerUltimoNumeroFactura(tipoComprobanteAfip, data.puntoVenta);
+        } else if(tipoComprobante == 'NOTA CREDITO') {
+            datosRespuesta.ultimoIdCAE = await this.obtenerUltimoNumeroNotaCredito(tipoComprobanteAfip, data.puntoVenta);
+        } else if(tipoComprobante == 'NOTA DEBITO') {
+
         }
 
         return datosRespuesta;
@@ -137,7 +148,10 @@ class Tickets {
             fechaVencimientoPago = parseInt(FuncionesComunes.getDateAMD()); // Corroborar fecha vencimiento pago, cuántos días son?
         }
 
-        let res = null;
+        let res = {
+            CAE: '0',
+            CAEFchVto: new Date()
+        };
 
         if(datosFactura.puntoVenta == ConstantesAfip.DatosEmpresa.PUNTO_VENTA_FACTURA_ELECTRONICA) {
             res = await afip.createBill({
@@ -179,11 +193,6 @@ class Tickets {
                     },
                 },
             });
-        } else {
-            res = {
-                CAE: '0',
-                CAEFchVto: new Date()
-            }
         }
 
         let ultimoIdFactura = await dataBase.findLastId(ticketModel) + 1;
@@ -242,7 +251,7 @@ class Tickets {
     async obtenerUltimoNumeroFactura(tipoFactura, puntoVenta) {
         const facturas = await ticketModel.findOne({ idTipoFactura: tipoFactura, puntoVenta: puntoVenta }).sort({ numeroFactura: -1 });
 
-        if(facturas.numeroFactura) {
+        if(facturas && facturas.numeroFactura) {
             return facturas.numeroFactura;
         }
 
@@ -594,8 +603,6 @@ class Tickets {
                 numeroIdentificacion = ConstantesAfip.NumerosDocumento.NUMERO_DOCUMENTO_CONSUMIDOR_FINAL;
             }
         }
-        
-        let fechaServicioDesde = null, fechaServicioHasta = null, fechaVencimientoPago = null;
 
         let importeIva = 0.0;
         let detallesIva = [];
@@ -606,46 +613,63 @@ class Tickets {
             importeIva += ivaItem;
 
             detallesIva.push({
-                'Id' 		: this.tipoIvaSegunPorcentaje(itemNotaCredito.iva),
-                'BaseImp' 	: itemNotaCredito.importe,
-                'Importe' 	: ivaItem
+                AlicIva: {
+                    'Id' 		: this.tipoIvaSegunPorcentaje(itemNotaCredito.iva),
+                    'BaseImp' 	: itemNotaCredito.importe,
+                    'Importe' 	: ivaItem
+                },
             });
         });
 
         datosNotaCredito.comprobantesAsociados.forEach(comprobanteAsociado => {
             comprobantesAsociados.push({
-                'Tipo' 		: ConstantesAfip.TiposComprobante.TIPO_FACTURA_A,
-                'PtoVta' 	: comprobanteAsociado.puntoVenta,
-                'Nro' 		: comprobanteAsociado.numeroComprobante
+                CbteAsoc: {
+                    'Tipo' 		: comprobanteAsociado.idTipoComprobante,
+                    'PtoVta' 	: comprobanteAsociado.puntoVenta,
+                    'Nro' 		: comprobanteAsociado.numeroComprobante
+                },
             });
         });
 
-        const data = {
-            'CantReg' 	    : 1, 
-            'PtoVta' 	    : datosNotaCredito.puntoVenta,
-            'CbteTipo' 	    : tipoNotaCredito, 
-            'Concepto' 	    : ConstantesAfip.TiposConceptos.CONCEPTO_PRODUCTOS,
-            'DocTipo' 	    : tipoIdentificacion,
-            'DocNro' 	    : numeroIdentificacion,
-            'CbteDesde'     : datosNotaCredito.cae,
-            'CbteHasta'     : datosNotaCredito.cae,
-            'CbteFch' 	    : parseInt(fechaNotaCredito.replace(/-/g, '')),	
-            'FchServDesde'  : fechaServicioDesde,
-            'FchServHasta'  : fechaServicioHasta,
-            'FchVtoPago'    : fechaVencimientoPago,
-            'ImpTotal' 	    : parseFloat(datosNotaCredito.resultadoFactura.subtotal.toFixed(2)),
-            'ImpTotConc'    : 0, // Importe neto no gravado
-            'ImpNeto' 	    : parseFloat(parseFloat(datosNotaCredito.resultadoFactura.subtotal.toFixed(2)) - parseFloat(importeIva).toFixed(2)).toFixed(2),
-            'ImpOpEx' 	    : 0.0,
-            'ImpIVA' 	    : importeIva,
-            'ImpTrib' 	    : 0, //Importe total de tributos
-            'MonId' 	    : ConstantesAfip.TiposMoneda.TIPO_MONEDA_PESO,
-            'MonCotiz' 	    : ConstantesAfip.IdTiposMoneda.TIPO_MONEDA_PESO,   
-            'Iva' 		    : detallesIva,
-            'CbtesAsoc'     : comprobantesAsociados,
+        let res = {
+            CAE: '0',
+            CAEFchVto: new Date()
         };
 
-        const res = await afip.ElectronicBilling.createVoucher(data);
+        if(datosNotaCredito.puntoVenta == ConstantesAfip.DatosEmpresa.PUNTO_VENTA_FACTURA_ELECTRONICA) {
+            res = await afip.createBill({
+                Auth: { Cuit: ConstantesAfip.DatosEmpresa.CUIT },
+                params: {
+                    FeCAEReq: {
+                        FeCabReq: {
+                            CantReg: 1,
+                            PtoVta: datosNotaCredito.puntoVenta,
+                            CbteTipo: tipoNotaCredito,
+                        },
+                        FeDetReq: {
+                            FECAEDetRequest: {
+                                DocTipo: tipoIdentificacion,
+                                DocNro: numeroIdentificacion,
+                                Concepto: ConstantesAfip.TiposConceptos.CONCEPTO_PRODUCTOS,
+                                CbteDesde: datosNotaCredito.cae,
+                                CbteHasta: datosNotaCredito.cae,
+                                CbteFch: moment().format('YYYYMMDD'),
+                                ImpTotal: parseFloat(datosNotaCredito.resultadoFactura.subtotal.toFixed(2)),
+                                ImpTotConc: 0,
+                                ImpNeto: parseFloat(parseFloat(datosNotaCredito.resultadoFactura.subtotal.toFixed(2)) - parseFloat(importeIva).toFixed(2)).toFixed(2),
+                                ImpOpEx: 0.0,
+                                ImpIVA: importeIva,
+                                ImpTrib: 0,
+                                MonId: ConstantesAfip.TiposMoneda.TIPO_MONEDA_PESO,
+                                MonCotiz: ConstantesAfip.IdTiposMoneda.TIPO_MONEDA_PESO,
+                                Iva: detallesIva,
+                                CbtesAsoc: comprobantesAsociados,
+                            },
+                        },
+                    },
+                },
+            });
+        }
 
         let ultimoIdNotaCredito = await dataBase.findLastId(creditNoteModel) + 1;
         let ultimoNumeroNotaCredito = await this.obtenerUltimoNumeroNotaCredito(tipoNotaCredito, datosNotaCredito.puntoVenta) + 1;
@@ -712,6 +736,32 @@ class Tickets {
         } else if(porcentaje == 2.5) {
             return ConstantesAfip.TiposIVA.IVA_2_5;
         }
+    }
+
+    idTipoComprobanteSegunNombre(nombreComprobante) {
+        let tipoComprobanteAfip = 0;
+
+        if(nombreComprobante == 'FACTURA A') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_FACTURA_A;
+        } else if(nombreComprobante == 'FACTURA B') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_FACTURA_B;
+        } else if(nombreComprobante == 'FACTURA C') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_FACTURA_C;
+        } else if(nombreComprobante == 'NOTA DE CRÉDITO A') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_CREDITO_A;
+        } else if(nombreComprobante == 'NOTA DE CRÉDITO B') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_CREDITO_B;
+        } else if(nombreComprobante == 'NOTA DE CRÉDITO C') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_CREDITO_C;
+        } else if(nombreComprobante == 'NOTA DE DÉBITO A') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_DEBITO_A;
+        } else if(nombreComprobante == 'NOTA DE DÉBITO B') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_DEBITO_B;
+        } else if(nombreComprobante == 'NOTA DE DÉBITO C') {
+            tipoComprobanteAfip = ConstantesAfip.TiposComprobante.TIPO_NOTA_DEBITO_C;
+        }
+
+        return tipoComprobanteAfip;
     }
 }
 export default Tickets;
