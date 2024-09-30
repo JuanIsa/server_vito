@@ -6,6 +6,7 @@ import Articles from './handleArticles.js';
 import ticketModel from './models/modelTicket.js';
 import paymentsModel from './models/modelPayments.js';
 import creditNoteModel from './models/modelCreditNote.js';
+import debitNoteModel from './models/modelDebitNote.js';
 import fs from 'fs';
 import facturajs from 'facturajs';
 
@@ -263,6 +264,16 @@ class Tickets {
 
         if(notaCredito && notaCredito.numeroNotaCredito) {
             return notaCredito.numeroNotaCredito;
+        }
+
+        return 0;
+    }
+
+    async obtenerUltimoNumeroNotaDebito(tipoNotaDebito, puntoVenta) {
+        const notaDebito = await debitNoteModel.findOne({ idTipoNotaDebito: tipoNotaDebito, puntoVenta: puntoVenta }).sort({ id: -1 });
+
+        if(notaDebito && notaDebito.numeroNotaDebito) {
+            return notaDebito.numeroNotaDebito;
         }
 
         return 0;
@@ -762,6 +773,144 @@ class Tickets {
         }
 
         return tipoComprobanteAfip;
+    }
+
+    async generateCreditNote(datosNotaCredito) {
+        const afip = new Afip({ CUIT: ConstantesAfip.DatosEmpresa.CUIT });
+        let datosCliente = await clients.getClient({id: datosNotaCredito.idCliente});
+        const fechaNotaDebito = new Date(Date.now() - ((new Date()).getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+        let tipoNotaDebito = ConstantesAfip.TiposComprobante.TIPO_NOTA_DEBITO_A;
+        let nombreTipoNotaDebito = 'NOTA DE DÉBITO A';
+        let tipoIdentificacion = ConstantesAfip.TiposDocumento.TIPO_DOC_CUIT;
+        let numeroIdentificacion = datosCliente.cuitNumber;
+
+        if(datosCliente.ivaType == 'EXENTO' || datosCliente.ivaType == 'CONSUMIDOR FINAL') {
+            tipoNotaDebito = ConstantesAfip.TiposComprobante.TIPO_NOTA_DEBITO_B;
+            nombreTipoNotaDebito = 'NOTA DE DÉBITO B';
+            tipoIdentificacion = ConstantesAfip.TiposDocumento.TIPO_DOC_CUIL;
+
+            if(datosCliente.ivaType == 'CONSUMIDOR FINAL') {
+                tipoIdentificacion = ConstantesAfip.TiposDocumento.TIPO_DOC_CONSUMIDOR_FINAL;
+                numeroIdentificacion = ConstantesAfip.NumerosDocumento.NUMERO_DOCUMENTO_CONSUMIDOR_FINAL;
+            }
+        }
+
+        let importeIva = 0.0;
+        let detallesIva = [];
+        let comprobantesAsociados = [];
+
+        datosNotaDebito.itemsNotaCredito.forEach(itemNotaCredito => {
+            let ivaItem = itemNotaCredito.importe * itemNotaCredito.iva / 100;
+            importeIva += ivaItem;
+
+            detallesIva.push({
+                AlicIva: {
+                    'Id' 		: this.tipoIvaSegunPorcentaje(itemNotaCredito.iva),
+                    'BaseImp' 	: itemNotaCredito.importe,
+                    'Importe' 	: ivaItem
+                },
+            });
+        });
+
+        datosNotaDebito.comprobantesAsociados.forEach(comprobanteAsociado => {
+            comprobantesAsociados.push({
+                CbteAsoc: {
+                    'Tipo' 		: comprobanteAsociado.idTipoComprobante,
+                    'PtoVta' 	: comprobanteAsociado.puntoVenta,
+                    'Nro' 		: comprobanteAsociado.numeroComprobante
+                },
+            });
+        });
+
+        let res = {
+            CAE: '0',
+            CAEFchVto: new Date()
+        };
+
+        if(datosNotaDebito.puntoVenta == ConstantesAfip.DatosEmpresa.PUNTO_VENTA_FACTURA_ELECTRONICA) {
+            res = await afip.createBill({
+                Auth: { Cuit: ConstantesAfip.DatosEmpresa.CUIT },
+                params: {
+                    FeCAEReq: {
+                        FeCabReq: {
+                            CantReg: 1,
+                            PtoVta: datosNotaDebito.puntoVenta,
+                            CbteTipo: tipoNotaDebito,
+                        },
+                        FeDetReq: {
+                            FECAEDetRequest: {
+                                DocTipo: tipoIdentificacion,
+                                DocNro: numeroIdentificacion,
+                                Concepto: ConstantesAfip.TiposConceptos.CONCEPTO_PRODUCTOS,
+                                CbteDesde: datosNotaDebito.cae,
+                                CbteHasta: datosNotaDebito.cae,
+                                CbteFch: moment().format('YYYYMMDD'),
+                                ImpTotal: parseFloat(datosNotaDebito.resultadoFactura.subtotal.toFixed(2)),
+                                ImpTotConc: 0,
+                                ImpNeto: parseFloat(parseFloat(datosNotaDebito.resultadoFactura.subtotal.toFixed(2)) - parseFloat(importeIva).toFixed(2)).toFixed(2),
+                                ImpOpEx: 0.0,
+                                ImpIVA: importeIva,
+                                ImpTrib: 0,
+                                MonId: ConstantesAfip.TiposMoneda.TIPO_MONEDA_PESO,
+                                MonCotiz: ConstantesAfip.IdTiposMoneda.TIPO_MONEDA_PESO,
+                                Iva: detallesIva,
+                                CbtesAsoc: comprobantesAsociados,
+                            },
+                        },
+                    },
+                },
+            });
+        }
+
+        let ultimoIdNotaDebito = await dataBase.findLastId(creditNoteModel) + 1;
+        let ultimoNumeroNotaDebito = await this.obtenerUltimoNumeroNotaDebito(tipoNotaDebito, datosNotaDebito.puntoVenta) + 1;
+
+        return await debitNoteModel.create({
+            active: true,
+            id: ultimoIdNotaDebito,
+            idCliente: datosNotaDebito.idCliente,
+            idTipoNotaDebito: tipoNotaDebito,
+            puntoVenta: datosNotaDebito.puntoVenta,
+            numeroNotaDebito: ultimoNumeroNotaDebito,
+            tipoNotaDebito: nombreTipoNotaDebito,
+            fechaNotaDebito: datosNotaDebito.fecha,
+            observaciones: datosNotaDebito.observaciones,
+            importe: datosNotaDebito.resultadoFactura.subtotal,
+            cae: res.CAE,
+            vencimientoCae: res.CAEFchVto,
+            detallesNotaDebito: datosNotaDebito.itemsNotaCredito,
+            comprobantesAsociados: datosNotaDebito.comprobantesAsociados,
+            creationData: {
+                date: FuncionesComunes.getDate(),
+                responsible:"root"
+            },
+            modificationData: {
+                date:"",
+                responsible:""
+            },
+            deleteData: {
+                date:"",
+                responsible:""
+            }
+        })
+        .then(() => {
+            let datosCuentaCorriente = {
+                id: 0,
+                tipoConcepto: nombreTipoNotaDebito,
+                idConcepto: ultimoIdNotaDebito,
+                puntoVenta: datosNotaDebito.puntoVenta,
+                numeroComprobante: ultimoNumeroNotaDebito,
+                debe: parseFloat(datosNotaDebito.resultadoFactura.subtotal.toFixed(2)),
+                haber: 0.0,
+                observaciones: datosNotaDebito.observaciones,
+                fecha: datosNotaDebito.fecha
+            }
+    
+            datosCliente.currentAccount.push(datosCuentaCorriente);
+    
+            return datosCliente.save();
+        })
+        .catch(e => e)
     }
 }
 export default Tickets;
