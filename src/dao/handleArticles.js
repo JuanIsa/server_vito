@@ -158,8 +158,14 @@ class Articles {
         .catch(e => e)
     }
 
-    async listArticle() {
-        return await articleModel.find().sort({nombre : 1})
+    async listArticle(filtros = null) {
+        let parametrosFiltro = {};
+
+        if(filtros.tipoArticulo) {
+            parametrosFiltro.tipoArticulo = filtros.tipoArticulo;
+        }
+
+        return await articleModel.find(parametrosFiltro).sort({nombre : 1})
         .then(data => data)
         .catch(e => e)
     }
