@@ -596,7 +596,6 @@ class Tickets {
     
 
     async generateCreditNote(datosNotaCredito) {
-        const afip = new Afip({ CUIT: ConstantesAfip.DatosEmpresa.CUIT });
         let datosCliente = await clients.getClient({id: datosNotaCredito.idCliente});
         const fechaNotaCredito = new Date(Date.now() - ((new Date()).getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         let tipoNotaCredito = ConstantesAfip.TiposComprobante.TIPO_NOTA_CREDITO_A;
@@ -775,8 +774,7 @@ class Tickets {
         return tipoComprobanteAfip;
     }
 
-    async generateCreditNote(datosNotaCredito) {
-        const afip = new Afip({ CUIT: ConstantesAfip.DatosEmpresa.CUIT });
+    async generateDebitNote(datosNotaCredito) {
         let datosCliente = await clients.getClient({id: datosNotaCredito.idCliente});
         const fechaNotaDebito = new Date(Date.now() - ((new Date()).getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         let tipoNotaDebito = ConstantesAfip.TiposComprobante.TIPO_NOTA_DEBITO_A;
