@@ -11,5 +11,6 @@ ticketsRoute.post('/gettickets', TicketsController.getTickets);
 ticketsRoute.post('/getunpaidtickets', TicketsController.getUnpaidTickets);
 ticketsRoute.post('/generatepayment', TicketsController.createPayment);
 ticketsRoute.post('/getpayments', TicketsController.getPayments);
+ticketsRoute.get('/printticket', TicketsController.printTicket);
 
 export default ticketsRoute;

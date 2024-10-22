@@ -9,6 +9,7 @@ import creditNoteModel from './models/modelCreditNote.js';
 import debitNoteModel from './models/modelDebitNote.js';
 import fs from 'fs';
 import facturajs from 'facturajs';
+import puppeteer from 'puppeteer';
 
 const { AfipServices } = facturajs;
 
@@ -281,6 +282,14 @@ class Tickets {
 
     async getTickets(params) {
         let filtros = {};
+
+        if(params.puntoVenta) {
+            filtros.puntoVenta = params.puntoVenta;
+        }
+
+        if(params.numeroFactura) {
+            filtros.numeroFactura = params.numeroFactura;
+        }
 
         if (params.fechaDesde) {
             filtros.fechaFactura = {
@@ -909,6 +918,62 @@ class Tickets {
             return datosCliente.save();
         })
         .catch(e => e)
+    }
+
+    async printTicket() {
+        const facturas = await this.getTickets({
+            puntoVenta: 7,
+            numeroFactura: 1
+        });
+
+        let datosFactura = null;
+
+        if(facturas) {
+            datosFactura = facturas[0];
+        }
+
+        if(!datosFactura) {
+            throw new Error('No se encontró la factura');
+        }
+
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+
+        const url = 'https://cajas.andif.com.ar/sistema-administracion/generar-factura/1';
+        await page.goto(url, { waitUntil: 'networkidle2' });
+
+        await page.evaluate(() => {
+            const element = document.querySelector('.contenedor-menu-sistema');
+            if (element) {
+                element.style.display = 'none';
+            }
+        });
+
+        await page.addStyleTag({
+            content: `
+                @media print {
+                    @page {
+                        size: A4;
+                        margin: 0;
+                    }
+                    .invoice {
+                        padding: 20px; /* Ajusta según sea necesario */
+                        box-sizing: border-box;
+                        height: 100%;
+                    }
+                }
+            `
+        });
+
+        // Genera el PDF
+        await page.pdf({
+            path: 'output.pdf',
+            format: 'A4',
+            printBackground: true, // Incluir fondos
+        });
+
+        await browser.close();
+        console.log('PDF creado con éxito!');
     }
 }
 export default Tickets;

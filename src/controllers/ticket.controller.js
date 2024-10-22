@@ -35,6 +35,10 @@ export const getPayments = async (req, res) => {
     handleResponse(instanceOfTickets.getPayments(req.body), res);
 }
 
+export const printTicket = async (req, res) => {
+    handleResponse(instanceOfTickets.printTicket(req.params.id), res);
+}
+
 export default {
     getLastCAE,
     generateTicket,
@@ -43,5 +47,6 @@ export default {
     getTickets,
     getUnpaidTickets,
     createPayment,
-    getPayments
+    getPayments,
+    printTicket
 }

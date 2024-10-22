@@ -29,12 +29,12 @@ app.use(express.urlencoded({ extended: true }));
 //Defino que los archivos estáticos los va a tomar del siguiente directorio: public.
 app.use(express.static('public'));
 //Rutas
-app.use('/users', usersRoute);
-app.use('/client', clientsRoute);
-app.use('/article', articleRoute);
-app.use('/order', ordersRoute);
-app.use('/ticket', ticketsRoute);
-app.use('/administration', administrationRoute);
+app.use('/api/users', usersRoute);
+app.use('/api/client', clientsRoute);
+app.use('/api/article', articleRoute);
+app.use('/api/order', ordersRoute);
+app.use('/api/ticket', ticketsRoute);
+app.use('/api/administration', administrationRoute);
 //Ruta default de inicio del servidor.
 app.get("/", async (req, res) => {
   res.send("Todo Ok funcionando");
