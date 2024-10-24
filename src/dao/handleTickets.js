@@ -291,6 +291,10 @@ class Tickets {
             filtros.numeroFactura = params.numeroFactura;
         }
 
+        if(params.id) {
+            filtros.id = params.id;
+        }
+
         if (params.fechaDesde) {
             filtros.fechaFactura = {
                 $gte: new Date(params.fechaDesde),
@@ -956,7 +960,7 @@ class Tickets {
                         size: A4;
                         margin: 0;
                     }
-                    .invoice {
+                    .factura {
                         padding: 20px; /* Ajusta según sea necesario */
                         box-sizing: border-box;
                         height: 100%;
