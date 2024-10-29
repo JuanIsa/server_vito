@@ -10,6 +10,7 @@ import debitNoteModel from './models/modelDebitNote.js';
 import fs from 'fs';
 import facturajs from 'facturajs';
 import puppeteer from 'puppeteer';
+import nodemailer from 'nodemailer';
 
 const { AfipServices } = facturajs;
 
@@ -927,7 +928,7 @@ class Tickets {
     async printTicket() {
         const facturas = await this.getTickets({
             puntoVenta: 7,
-            numeroFactura: 1
+            numeroFactura: 12
         });
 
         let datosFactura = null;
@@ -943,7 +944,7 @@ class Tickets {
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
 
-        const url = 'https://cajas.andif.com.ar/sistema-administracion/generar-factura/1';
+        const url = 'https://cajas.andif.com.ar/otros/generar-pdf-factura/' + datosFactura.id;
         await page.goto(url, { waitUntil: 'networkidle2' });
 
         await page.evaluate(() => {
@@ -961,7 +962,7 @@ class Tickets {
                         margin: 0;
                     }
                     .factura {
-                        padding: 20px; /* Ajusta según sea necesario */
+                        padding: 20px; 
                         box-sizing: border-box;
                         height: 100%;
                     }
@@ -973,11 +974,41 @@ class Tickets {
         await page.pdf({
             path: 'output.pdf',
             format: 'A4',
-            printBackground: true, // Incluir fondos
+            printBackground: true
         });
 
         await browser.close();
-        console.log('PDF creado con éxito!');
+
+        let transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: 'adm@vitodifrescaehijos.com.ar', // Tu correo electrónico
+                pass: 'anuw mfrk dhdv odzd' // Tu contraseña
+            }
+        });
+    
+        // Opciones del correo
+        let mailOptions = {
+            from: '"Vito Di Fresca E Hijos" <nahuelg.1992@gmail.com>', 
+            to: 'nahuelg.1992@gmail.com', 
+            subject: 'Aquí tienes el PDF', 
+            text: 'envío a continuación la Factura correspondiente al último trabajo realizado',
+            attachments: [
+                {
+                    filename: 'output.pdf', // Nombre del archivo
+                    path: 'output.pdf', // Ruta al archivo PDF
+                }
+            ]
+        };
+    
+        // Enviar el correo
+        try {
+            let info = await transporter.sendMail(mailOptions);
+            console.log('Correo enviado: %s', info.messageId);
+        } catch (error) {
+            console.error('Error al enviar el correo: ', error);
+        }
+    
     }
 }
 export default Tickets;
