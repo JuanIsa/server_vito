@@ -23,6 +23,10 @@ export const getTickets = async (req, res) => {
     handleResponse(instanceOfTickets.getTickets(req.body), res);
 }
 
+export const getCreditNotes = async (req, res) => {
+    handleResponse(instanceOfTickets.getCreditNotes(req.body), res);
+}
+
 export const getUnpaidTickets = async (req, res) => {
     handleResponse(instanceOfTickets.getUnpaidTickets(req.body), res);
 }
@@ -36,7 +40,7 @@ export const getPayments = async (req, res) => {
 }
 
 export const printTicket = async (req, res) => {
-    handleResponse(instanceOfTickets.printTicket(req.params.id), res);
+    handleResponse(instanceOfTickets.printTicket(req.body), res);
 }
 
 export default {
@@ -48,5 +52,6 @@ export default {
     getUnpaidTickets,
     createPayment,
     getPayments,
-    printTicket
+    printTicket,
+    getCreditNotes
 }

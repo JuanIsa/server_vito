@@ -95,6 +95,24 @@ class Clients {
         return await clientModel.findOne({clientName: name})
     }
 
+    async getContactDataClient(idCliente) {
+        return await clientModel.findOne({id: idCliente}, {contactData: 1});
+    }
+
+    async getMailTicketClient(idCliente) {
+        const cliente = await clientModel.findOne({id: idCliente, "contactData.contactoFactura" : true }).exec();
+
+        if (cliente) {
+            const emails = cliente.contactData
+              .filter(contact => contact.contactoFactura === true)
+              .map(contact => contact.email);
+      
+            return emails;
+        }
+
+        return [];
+    }
+
     async getStateList () {
         return await Administracion.obtenerListaProvincias();
     }

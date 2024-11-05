@@ -6,7 +6,11 @@ const contactSchema = new mongoose.Schema({
     nombre : String,
     telefono: String,
     celular: String,
-    email: String
+    email: String,
+    contactoFactura: {
+        type: Boolean,
+        default: false
+    }
 });
 
 const currentAccountSchema = new mongoose.Schema({

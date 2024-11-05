@@ -246,7 +246,9 @@ class Tickets {
     
             datosCliente.currentAccount.push(datosCuentaCorriente);
     
-            return datosCliente.save();
+            return datosCliente.save().then(() => {
+                this.printTicket(ultimoIdFactura);
+            }) ;
         })
         .catch(e => e)
     }
@@ -608,7 +610,6 @@ class Tickets {
     }
 
     
-
     async generateCreditNote(datosNotaCredito) {
         let datosCliente = await clients.getClient({id: datosNotaCredito.idCliente});
         const fechaNotaCredito = new Date(Date.now() - ((new Date()).getTimezoneOffset() * 60000)).toISOString().split('T')[0];
@@ -744,6 +745,10 @@ class Tickets {
             return datosCliente.save();
         })
         .catch(e => e)
+    }
+
+    async getCreditNotes(params) {
+        
     }
 
     tipoIvaSegunPorcentaje(porcentaje) {
@@ -925,10 +930,13 @@ class Tickets {
         .catch(e => e)
     }
 
-    async printTicket() {
+    async printTicket(params) {
+        if(!params.idFactura || params.idFactura == 0) {
+            throw new Error('No se especificó la factura a enviar.');
+        }
+
         const facturas = await this.getTickets({
-            puntoVenta: 7,
-            numeroFactura: 12
+            id: params.idFactura
         });
 
         let datosFactura = null;
@@ -937,6 +945,12 @@ class Tickets {
             datosFactura = facturas[0];
         }
 
+        let datosContacto = await clients.getMailTicketClient(datosFactura.idCliente);
+
+        datosContacto = ['nahuelg.1992@gmail.com'];
+
+        let numeroComprobanteCompleto = datosFactura.puntoVenta.toString().padStart(4, '0') + '-' + datosFactura.numeroFactura.toString().padStart(8, '0');
+
         if(!datosFactura) {
             throw new Error('No se encontró la factura');
         }
@@ -944,7 +958,7 @@ class Tickets {
         const browser = await puppeteer.launch();
         const page = await browser.newPage();
 
-        const url = 'https://cajas.andif.com.ar/otros/generar-pdf-factura/' + datosFactura.id;
+        const url = 'https://cajas.andif.com.ar/otros/generar-pdf-factura/' + params.idFactura;
         await page.goto(url, { waitUntil: 'networkidle2' });
 
         await page.evaluate(() => {
@@ -970,9 +984,8 @@ class Tickets {
             `
         });
 
-        // Genera el PDF
         await page.pdf({
-            path: 'output.pdf',
+            path: numeroComprobanteCompleto + '.pdf',
             format: 'A4',
             printBackground: true
         });
@@ -990,25 +1003,31 @@ class Tickets {
         // Opciones del correo
         let mailOptions = {
             from: '"Vito Di Fresca E Hijos" <nahuelg.1992@gmail.com>', 
-            to: 'nahuelg.1992@gmail.com', 
-            subject: 'Aquí tienes el PDF', 
-            text: 'envío a continuación la Factura correspondiente al último trabajo realizado',
+            to: datosContacto, 
+            subject: 'FACTURA ' + numeroComprobanteCompleto, 
+            text: 'Envío a continuación la factura correspondiente al último trabajo realizado',
             attachments: [
                 {
-                    filename: 'output.pdf', // Nombre del archivo
-                    path: 'output.pdf', // Ruta al archivo PDF
+                    filename: numeroComprobanteCompleto + '.pdf', // Nombre del archivo
+                    path: numeroComprobanteCompleto + '.pdf', // Ruta al archivo PDF
                 }
             ]
         };
+
+        let respuesta = {
+            mensaje: 'Email enviado correctamente',
+            error: false
+        }
     
-        // Enviar el correo
         try {
             let info = await transporter.sendMail(mailOptions);
             console.log('Correo enviado: %s', info.messageId);
         } catch (error) {
-            console.error('Error al enviar el correo: ', error);
+            respuesta.message = 'Error al enviar el correo: ' + error;
+            respuesta.error = true;
         }
-    
+
+        return respuesta;
     }
 }
 export default Tickets;
