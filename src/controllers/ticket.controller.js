@@ -27,6 +27,10 @@ export const getCreditNotes = async (req, res) => {
     handleResponse(instanceOfTickets.getCreditNotes(req.body), res);
 }
 
+export const getDebitNotes = async (req, res) => {
+    handleResponse(instanceOfTickets.getDebitNotes(req.body), res);
+}
+
 export const getUnpaidTickets = async (req, res) => {
     handleResponse(instanceOfTickets.getUnpaidTickets(req.body), res);
 }
@@ -53,5 +57,6 @@ export default {
     createPayment,
     getPayments,
     printTicket,
-    getCreditNotes
+    getCreditNotes,
+    getDebitNotes
 }

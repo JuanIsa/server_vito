@@ -9,6 +9,7 @@ ticketsRoute.post('/generatecreditnote', TicketsController.generateCreditNote);
 ticketsRoute.post('/generatedebitnote', TicketsController.generateDebitNote);
 ticketsRoute.post('/gettickets', TicketsController.getTickets);
 ticketsRoute.post('/getcreditnotes', TicketsController.getCreditNotes);
+ticketsRoute.post('/getdebitnotes', TicketsController.getDebitNotes);
 ticketsRoute.post('/getunpaidtickets', TicketsController.getUnpaidTickets);
 ticketsRoute.post('/generatepayment', TicketsController.createPayment);
 ticketsRoute.post('/getpayments', TicketsController.getPayments);

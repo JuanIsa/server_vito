@@ -748,7 +748,113 @@ class Tickets {
     }
 
     async getCreditNotes(params) {
-        
+        let filtros = {};
+
+        if(params.puntoVenta) {
+            filtros.puntoVenta = params.puntoVenta;
+        }
+
+        if(params.numeroNotaCredito) {
+            filtros.numeroNotaCredito = params.numeroNotaCredito;
+        }
+
+        if(params.id) {
+            filtros.id = params.id;
+        }
+
+        if (params.fechaDesde) {
+            filtros.fechaNotaCredito = {
+                $gte: new Date(params.fechaDesde),
+                $lte: new Date(params.fechaHasta)
+            };
+        }
+
+        if (params.cliente) {
+            const datosCliente = await clients.getClientId(params.cliente);
+            filtros.idCliente = datosCliente.id;
+        }
+
+        return await creditNoteModel.find(filtros)
+        .then(async data => {
+            let respuesta = await Promise.all(data.map(async datosNotaCredito => {
+                const datosCliente = await clients.getClient({id : datosNotaCredito.idCliente});
+
+                let notaCreditoActual = {
+                    id: datosNotaCredito.id,
+                    idCliente: datosNotaCredito.idCliente,
+                    nombreCliente: datosCliente.clientName,
+                    observaciones: datosNotaCredito.observaciones,
+                    tipoFactura: datosNotaCredito.tipoNotaCredito,
+                    cae: datosNotaCredito.cae,
+                    totalConIva: datosNotaCredito.importe,
+                    comprobantesAsociados: datosNotaCredito.comprobantesAsociados,
+                    detallesNotaCredito: datosNotaCredito.detallesNotaCredito,
+                    fechaFactura: datosNotaCredito.fechaNotaCredito,
+                    puntoVenta: datosNotaCredito.puntoVenta,
+                    numeroFactura: datosNotaCredito.numeroNotaCredito
+                }
+
+                return notaCreditoActual;
+            }));
+            
+            return respuesta;
+        })
+        .catch();
+    }
+
+    async getDebitNotes(params) {
+        let filtros = {};
+
+        if(params.puntoVenta) {
+            filtros.puntoVenta = params.puntoVenta;
+        }
+
+        if(params.numeroNotaDebito) {
+            filtros.numeroNotaDebito = params.numeroNotaDebito;
+        }
+
+        if(params.id) {
+            filtros.id = params.id;
+        }
+
+        if (params.fechaDesde) {
+            filtros.fechaNotaDebito = {
+                $gte: new Date(params.fechaDesde),
+                $lte: new Date(params.fechaHasta)
+            };
+        }
+
+        if (params.cliente) {
+            const datosCliente = await clients.getClientId(params.cliente);
+            filtros.idCliente = datosCliente.id;
+        }
+
+        return await debitNoteModel.find(filtros)
+        .then(async data => {
+            let respuesta = await Promise.all(data.map(async datosNotaDebito => {
+                const datosCliente = await clients.getClient({id : datosNotaDebito.idCliente});
+
+                let notaDebitoActual = {
+                    id: datosNotaDebito.id,
+                    idCliente: datosNotaDebito.idCliente,
+                    nombreCliente: datosCliente.clientName,
+                    observaciones: datosNotaDebito.observaciones,
+                    tipoFactura: datosNotaDebito.tipoNotaCredito,
+                    cae: datosNotaDebito.cae,
+                    totalConIva: datosNotaDebito.importe,
+                    comprobantesAsociados: datosNotaDebito.comprobantesAsociados,
+                    detallesNotaCredito: datosNotaDebito.detallesNotaDebito,
+                    fechaFactura: datosNotaDebito.fechaNotaDebito,
+                    puntoVenta: datosNotaDebito.puntoVenta,
+                    numeroFactura: datosNotaDebito.numeroNotaDebito
+                }
+
+                return notaDebitoActual;
+            }));
+
+            return respuesta;
+        })
+        .catch();
     }
 
     tipoIvaSegunPorcentaje(porcentaje) {
